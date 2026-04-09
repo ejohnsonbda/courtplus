@@ -1492,7 +1492,9 @@ function selectSlot(btn, slotId, startTime, endTime) {
 
 async function bkGoStep3() {
   if (!_selectedSlot) { showToast('Please select a time slot.', 'error'); return; }
-  bkGoStep(3);
+  // Show loading state in panel 3 before fetching data
+  document.getElementById('bk-summary').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Loading summary…</div>';
+  _origBkGoStep(3);
   const date = document.getElementById('bk-date').value;
   const courtId = document.getElementById('bk-court').value;
   const lighting = document.querySelector('input[name="lighting"]:checked').value;
