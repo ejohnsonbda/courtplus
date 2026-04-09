@@ -322,6 +322,7 @@
       <a href="#pricing">Pricing</a>
       <a href="#contact">Contact</a>
       <a href="#faq">FAQ</a>
+      <a href="#" onclick="openUserLoginModal()" id="nav-account-link">My Account</a>
       <a href="#/admin" class="nav-cta" onclick="routeAdmin(event)">Admin</a>
     </nav>
     <button class="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -366,43 +367,128 @@
     <div class="section-heading">
       <span class="tag">Book a Court</span>
       <h2>Choose your sport. Book in minutes.</h2>
-      <p>Select Tennis or Pickleball, then follow the three-step process to reserve your court and complete payment.</p>
+      <p>Select your sport, pick a date, choose an available time slot, and confirm your booking — all in one place.</p>
     </div>
-    <div class="sport-selector">
-      <h2>What are you playing today?</h2>
-      <p>Select your sport to see booking options and available courts.</p>
-      <div class="sport-cards">
-        <div class="sport-card active" id="sc-tennis" onclick="selectSport('tennis')">
-          <div class="sport-icon">&#127934;</div>
-          <h3>Tennis</h3>
-          <p>Hard &amp; clay courts available. Singles, doubles, and coaching sessions.</p>
+
+    <!-- Sport Selector -->
+    <div class="sport-cards" style="max-width:520px;margin:0 auto 2rem">
+      <div class="sport-card active" id="sc-tennis" onclick="selectSport('tennis')">
+        <div class="sport-icon">&#127934;</div>
+        <h3>Tennis</h3>
+        <p>Hard &amp; clay courts. Singles, doubles, coaching.</p>
+      </div>
+      <div class="sport-card" id="sc-pickleball" onclick="selectSport('pickleball')">
+        <div class="sport-icon">&#127955;</div>
+        <h3>Pickleball</h3>
+        <p>Dedicated courts. All skill levels welcome.</p>
+      </div>
+    </div>
+
+    <!-- Booking Widget -->
+    <div id="booking-widget" style="background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden;max-width:960px;margin:0 auto">
+
+      <!-- Step Bar -->
+      <div style="display:flex;background:linear-gradient(135deg,var(--navy),var(--blue-deep));padding:1.2rem 2rem;gap:0;">
+        <div class="bk-step active" id="bkstep1" style="flex:1;text-align:center;color:white;opacity:1">
+          <div style="font-size:1.2rem;font-weight:800;font-family:Montserrat,sans-serif">1</div>
+          <div style="font-size:0.72rem;font-weight:600;opacity:0.85;margin-top:0.2rem">Select Date &amp; Court</div>
         </div>
-        <div class="sport-card" id="sc-pickleball" onclick="selectSport('pickleball')">
-          <div class="sport-icon">&#127955;</div>
-          <h3>Pickleball</h3>
-          <p>Dedicated pickleball courts. All skill levels welcome.</p>
+        <div style="width:1px;background:rgba(255,255,255,0.2);margin:0 0.5rem"></div>
+        <div class="bk-step" id="bkstep2" style="flex:1;text-align:center;color:white;opacity:0.45">
+          <div style="font-size:1.2rem;font-weight:800;font-family:Montserrat,sans-serif">2</div>
+          <div style="font-size:0.72rem;font-weight:600;opacity:0.85;margin-top:0.2rem">Choose Time Slot</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,0.2);margin:0 0.5rem"></div>
+        <div class="bk-step" id="bkstep3" style="flex:1;text-align:center;color:white;opacity:0.45">
+          <div style="font-size:1.2rem;font-weight:800;font-family:Montserrat,sans-serif">3</div>
+          <div style="font-size:0.72rem;font-weight:600;opacity:0.85;margin-top:0.2rem">Confirm &amp; Pay</div>
         </div>
       </div>
-      <div class="booking-steps">
-        <div class="step-card">
-          <div class="step-num">1</div>
-          <h3>Register</h3>
-          <p>Create your free account to access all booking features. It only takes a minute.</p>
-          <a href="#register" onclick="openRegisterModal()" class="btn btn-primary">Register Free</a>
+
+      <!-- Step 1: Date + Court -->
+      <div id="bk-panel-1" style="padding:2rem">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+          <div>
+            <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.5rem">Select Date</label>
+            <input type="date" id="bk-date" class="form-control" style="font-size:1rem;padding:0.8rem 1rem" />
+          </div>
+          <div>
+            <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.5rem">Select Court</label>
+            <select id="bk-court" class="form-control" style="font-size:1rem;padding:0.8rem 1rem">
+              <option value="">Loading courts...</option>
+            </select>
+          </div>
         </div>
-        <div class="step-card">
-          <div class="step-num">2</div>
-          <h3>Book</h3>
-          <p id="step2-desc">Select your tennis court, date, and time slot directly in the app.</p>
-          <a href="#book" id="step2-btn" class="btn btn-secondary">Book a Court</a>
+        <div style="margin-top:1rem">
+          <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.5rem">Lighting Required? <span style="font-weight:400;color:var(--muted)">(evening sessions only)</span></label>
+          <div style="display:flex;gap:1rem">
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer"><input type="radio" name="bk-lighting" value="no" checked /> No</label>
+            <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer"><input type="radio" name="bk-lighting" value="yes" /> Yes (+$5)</label>
+          </div>
         </div>
-        <div class="step-card">
-          <div class="step-num">3</div>
-          <h3>Pay</h3>
-          <p>Complete your payment securely through the W.E.R. Joell payment portal.</p>
-          <a href="#" target="_blank" rel="noopener" class="btn btn-green">Pay Now</a>
+        <button class="btn btn-primary" style="margin-top:1.5rem;width:100%" onclick="bkGoStep2()">See Available Slots &rarr;</button>
+      </div>
+
+      <!-- Step 2: Time Slot Grid -->
+      <div id="bk-panel-2" style="padding:2rem;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.5rem">
+          <div>
+            <span style="font-weight:700;color:var(--navy)" id="bk-summary-court"></span>
+            <span style="color:var(--muted);margin-left:0.5rem" id="bk-summary-date"></span>
+          </div>
+          <button class="btn btn-secondary" style="font-size:0.82rem;padding:0.5rem 1rem" onclick="bkGoStep1()">&larr; Change</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.6rem" id="bk-slots-grid">
+          <div style="text-align:center;color:var(--muted);padding:2rem;grid-column:1/-1">Loading slots...</div>
+        </div>
+        <div id="bk-selected-slot" style="margin-top:1.2rem;padding:1rem 1.2rem;background:var(--blue-soft);border-radius:12px;display:none">
+          <strong style="color:var(--blue)">Selected:</strong> <span id="bk-slot-label"></span>
+          <button class="btn btn-primary" style="float:right;font-size:0.85rem;padding:0.5rem 1.2rem" onclick="bkGoStep3()">Continue &rarr;</button>
+          <div style="clear:both"></div>
         </div>
       </div>
+
+      <!-- Step 3: Confirm & Pay -->
+      <div id="bk-panel-3" style="padding:2rem;display:none">
+        <h3 style="font-family:Montserrat,sans-serif;color:var(--navy);margin-bottom:1.2rem">Confirm Your Booking</h3>
+        <div style="background:var(--bg);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem">
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Sport</span><div style="font-weight:700;color:var(--navy)" id="bk-conf-sport"></div></div>
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Court</span><div style="font-weight:700;color:var(--navy)" id="bk-conf-court"></div></div>
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Date</span><div style="font-weight:700;color:var(--navy)" id="bk-conf-date"></div></div>
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Time</span><div style="font-weight:700;color:var(--navy)" id="bk-conf-time"></div></div>
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Lighting</span><div style="font-weight:700;color:var(--navy)" id="bk-conf-lighting"></div></div>
+            <div><span style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Amount Due</span><div style="font-weight:800;font-size:1.3rem;color:var(--pink)" id="bk-conf-amount"></div></div>
+          </div>
+        </div>
+        <div id="bk-login-required" style="display:none;background:var(--amber-soft);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1rem;font-size:0.9rem;color:var(--amber)">
+          <strong>Please log in or register</strong> to complete your booking.
+          <div style="margin-top:0.75rem;display:flex;gap:0.75rem">
+            <button class="btn btn-primary" style="font-size:0.82rem;padding:0.5rem 1rem" onclick="openUserLoginModal()">Log In</button>
+            <button class="btn btn-secondary" style="font-size:0.82rem;padding:0.5rem 1rem" onclick="openRegisterModal()">Register Free</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+          <button class="btn btn-secondary" style="flex:1" onclick="bkGoStep2()">&larr; Back</button>
+          <button class="btn btn-primary" style="flex:2" onclick="bkConfirm()">Confirm Booking</button>
+        </div>
+        <p style="font-size:0.8rem;color:var(--muted);margin-top:0.75rem;text-align:center">Payment is due at the stadium or via the online payment portal. You will receive a confirmation once booked.</p>
+      </div>
+
+      <!-- Confirmation Screen -->
+      <div id="bk-panel-done" style="padding:3rem 2rem;text-align:center;display:none">
+        <div style="font-size:3.5rem;margin-bottom:1rem">&#10003;</div>
+        <h2 style="font-family:Montserrat,sans-serif;color:var(--navy);margin-bottom:0.75rem">Booking Confirmed!</h2>
+        <p style="color:var(--muted);margin-bottom:1.5rem">Your court has been reserved. A confirmation has been saved to your account.</p>
+        <div style="background:var(--bg);border-radius:16px;padding:1.2rem;display:inline-block;text-align:left;min-width:280px;margin-bottom:1.5rem">
+          <div id="bk-done-summary" style="font-size:0.9rem;color:var(--navy)"></div>
+        </div>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="bkReset()">Book Another Court</button>
+          <button class="btn btn-primary" onclick="openMyBookingsModal()">View My Bookings</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -858,7 +944,8 @@
     </div>
     <nav class="sidebar-nav">
       <a href="#" class="active" onclick="showPanel('dashboard',this)" data-panel="dashboard"><span class="nav-icon">&#128200;</span> Dashboard</a>
-      <a href="#" onclick="showPanel('users',this)" data-panel="users"><span class="nav-icon">&#128101;</span> Users</a>
+      <a href="#" onclick="showPanel('users',this)" data-panel="users"><span class="nav-icon">&#128101;</span> Members</a>
+      <a href="#" onclick="showPanel('staff',this)" data-panel="staff"><span class="nav-icon">&#128119;</span> Staff Accounts</a>
       <a href="#" onclick="showPanel('courts',this)" data-panel="courts"><span class="nav-icon">&#127934;</span> Courts</a>
       <a href="#" onclick="showPanel('timeslots',this)" data-panel="timeslots"><span class="nav-icon">&#128336;</span> Time Slots</a>
       <a href="#" onclick="showPanel('bookings',this)" data-panel="bookings"><span class="nav-icon">&#128197;</span> Bookings</a>
@@ -919,6 +1006,29 @@
       </div>
     </div>
 
+    <!-- STAFF ACCOUNTS -->
+    <div class="admin-panel" id="panel-staff">
+      <div class="panel-header">
+        <h2>Staff Accounts</h2>
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+          <input type="search" class="search-bar" placeholder="Search staff..." oninput="searchTable(this,'staff-tbody')" />
+          <button class="btn btn-primary" style="font-size:0.88rem;padding:0.65rem 1.2rem" onclick="openInviteStaffModal()">+ Invite Staff</button>
+        </div>
+      </div>
+      <div style="background:var(--blue-soft);border-radius:12px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.88rem;color:var(--blue)">
+        <strong>&#128119; Staff Roles:</strong> &nbsp;
+        <span style="background:var(--navy);color:white;padding:0.2rem 0.6rem;border-radius:8px;font-size:0.75rem;margin-right:0.4rem">Super Admin</span> Full access &nbsp;&bull;&nbsp;
+        <span style="background:var(--blue);color:white;padding:0.2rem 0.6rem;border-radius:8px;font-size:0.75rem;margin-right:0.4rem">Manager</span> Courts, bookings, revenue &nbsp;&bull;&nbsp;
+        <span style="background:var(--pink);color:white;padding:0.2rem 0.6rem;border-radius:8px;font-size:0.75rem;margin-right:0.4rem">Staff</span> Bookings &amp; users only &nbsp;&bull;&nbsp;
+        <span style="background:var(--green);color:white;padding:0.2rem 0.6rem;border-radius:8px;font-size:0.75rem">Front Desk</span> View only
+      </div>
+      <div class="admin-table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="staff-tbody"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
     <!-- COURTS -->
     <div class="admin-panel" id="panel-courts">
       <div class="panel-header">
@@ -1051,6 +1161,76 @@
     </div>
 
   </main>
+</div>
+
+<!-- ===== USER LOGIN MODAL ===== -->
+<div id="user-login-overlay" style="display:none;position:fixed;inset:0;background:rgba(19,33,63,0.55);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+  <div style="background:white;border-radius:var(--radius-lg);width:100%;max-width:440px;overflow:hidden;box-shadow:var(--shadow-lg)">
+    <!-- Login View -->
+    <div id="ul-login-view">
+      <div style="background:linear-gradient(135deg,var(--pink),var(--blue));padding:2rem;text-align:center;color:white">
+        <div style="font-size:2rem;margin-bottom:0.5rem">&#128274;</div>
+        <h2 style="font-family:Montserrat,sans-serif;font-size:1.4rem;margin-bottom:0.25rem">Member Login</h2>
+        <p style="opacity:0.85;font-size:0.88rem">Sign in to view and manage your bookings</p>
+      </div>
+      <div style="padding:1.8rem">
+        <div id="ul-error" style="display:none;background:var(--red-soft);color:var(--red);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.88rem"></div>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.4rem">Email Address</label>
+          <input type="email" id="ul-email" class="form-control" placeholder="your@email.com" />
+        </div>
+        <div class="form-group" style="margin-bottom:0.5rem">
+          <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.4rem">Password</label>
+          <input type="password" id="ul-password" class="form-control" placeholder="Your password" onkeydown="if(event.key==='Enter')userLogin()" />
+        </div>
+        <div style="text-align:right;margin-bottom:1.2rem">
+          <a href="#" onclick="showForgotPassword()" style="font-size:0.82rem;color:var(--blue)">Forgot password?</a>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-bottom:0.75rem" onclick="userLogin()">Sign In</button>
+        <p style="text-align:center;font-size:0.85rem;color:var(--muted)">Don't have an account? <a href="#" onclick="closeUserLoginModal();openRegisterModal()" style="color:var(--pink);font-weight:700">Register Free</a></p>
+      </div>
+      <div style="padding:0 1.8rem 1.5rem;text-align:center">
+        <button onclick="closeUserLoginModal()" style="background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer">Cancel</button>
+      </div>
+    </div>
+    <!-- Forgot Password View -->
+    <div id="ul-forgot-view" style="display:none">
+      <div style="background:linear-gradient(135deg,var(--pink),var(--blue));padding:2rem;text-align:center;color:white">
+        <div style="font-size:2rem;margin-bottom:0.5rem">&#128140;</div>
+        <h2 style="font-family:Montserrat,sans-serif;font-size:1.4rem;margin-bottom:0.25rem">Reset Password</h2>
+        <p style="opacity:0.85;font-size:0.88rem">We'll send a reset link to your email</p>
+      </div>
+      <div style="padding:1.8rem">
+        <div id="ul-forgot-msg" style="display:none;background:var(--green-soft);color:var(--green);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.88rem"></div>
+        <div class="form-group" style="margin-bottom:1.2rem">
+          <label style="font-weight:700;font-size:0.85rem;color:var(--navy);display:block;margin-bottom:0.4rem">Email Address</label>
+          <input type="email" id="ul-reset-email" class="form-control" placeholder="your@email.com" />
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-bottom:0.75rem" onclick="sendPasswordReset()">Send Reset Link</button>
+        <p style="text-align:center;font-size:0.85rem;color:var(--muted)"><a href="#" onclick="showLoginView()" style="color:var(--blue)">Back to Login</a></p>
+      </div>
+    </div>
+    <!-- My Bookings View -->
+    <div id="ul-mybookings-view" style="display:none">
+      <div style="background:linear-gradient(135deg,var(--navy),var(--blue-deep));padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 style="font-family:Montserrat,sans-serif;font-size:1.2rem;color:white;margin-bottom:0.2rem">My Bookings</h2>
+          <p style="color:rgba(255,255,255,0.7);font-size:0.82rem" id="ul-welcome-name">Welcome back</p>
+        </div>
+        <button onclick="userLogout()" style="background:rgba(255,255,255,0.15);border:none;color:white;padding:0.4rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.82rem">Sign Out</button>
+      </div>
+      <div style="padding:1.5rem;max-height:70vh;overflow-y:auto">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 style="font-family:Montserrat,sans-serif;font-size:1rem;color:var(--navy)">Upcoming Bookings</h3>
+          <button class="btn btn-primary" style="font-size:0.78rem;padding:0.4rem 0.9rem" onclick="closeUserLoginModal();document.getElementById('book').scrollIntoView({behavior:'smooth'})">+ New Booking</button>
+        </div>
+        <div id="ul-bookings-list"><div style="text-align:center;color:var(--muted);padding:2rem">Loading your bookings...</div></div>
+      </div>
+      <div style="padding:0 1.5rem 1.5rem;text-align:center">
+        <button onclick="closeUserLoginModal()" style="background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ===== MODAL ===== -->
@@ -1306,7 +1486,7 @@
     document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
     if (link) link.classList.add('active');
-    const loaders = { users: loadUsers, courts: loadCourts, timeslots: loadTimeSlots, bookings: loadBookings, revenue: loadRevenue, updates: loadUpdates, faqs: loadAdminFAQs, pricing: loadAdminPricing, hours: loadAdminHours };
+    const loaders = { users: loadUsers, staff: loadStaff, courts: loadCourts, timeslots: loadTimeSlots, bookings: loadBookings, revenue: loadRevenue, updates: loadUpdates, faqs: loadAdminFAQs, pricing: loadAdminPricing, hours: loadAdminHours };
     if (loaders[name]) loaders[name]();
   }
 
@@ -1983,7 +2163,500 @@
     if (links) links.style.display = links.style.display === 'flex' ? 'none' : 'flex';
   }
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('open'); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.getElementById('modal-overlay').classList.remove('open');
+      closeUserLoginModal();
+    }
+  });
+
+  // ===== STAFF MANAGEMENT =====
+  const STAFF_ROLES = ['super_admin','manager','staff','front_desk'];
+  const STAFF_ROLE_LABELS = { super_admin:'Super Admin', manager:'Manager', staff:'Staff', front_desk:'Front Desk' };
+  const STAFF_ROLE_COLORS = { super_admin:'var(--navy)', manager:'var(--blue)', staff:'var(--pink)', front_desk:'var(--green)' };
+
+  async function loadStaff() {
+    try {
+      const { data } = await sb.from('staff_accounts').select('*').order('created_at', { ascending: false });
+      const rows = data || [];
+      document.getElementById('staff-tbody').innerHTML = rows.length ? rows.map(s => `
+        <tr>
+          <td><strong>${s.full_name||'—'}</strong></td>
+          <td>${s.email}</td>
+          <td><span style="background:${STAFF_ROLE_COLORS[s.role]||'var(--muted)'};color:white;padding:0.2rem 0.7rem;border-radius:8px;font-size:0.75rem;font-weight:700">${STAFF_ROLE_LABELS[s.role]||s.role}</span></td>
+          <td>${s.department||'—'}</td>
+          <td>${s.last_login ? new Date(s.last_login).toLocaleDateString() : 'Never'}</td>
+          <td><span class="status-badge status-${s.is_active?'active':'closed'}">${s.is_active?'Active':'Inactive'}</span></td>
+          <td>
+            <button class="action-btn action-edit" onclick="editStaff('${s.id}')">Edit</button>
+            <button class="action-btn" style="background:${s.is_active?'var(--amber-soft)':'var(--green-soft)'};color:${s.is_active?'var(--amber)':'var(--green)'}" onclick="toggleStaffStatus('${s.id}',${s.is_active})">${s.is_active?'Deactivate':'Activate'}</button>
+            <button class="action-btn action-delete" onclick="deleteRecord('staff_accounts','${s.id}',loadStaff)">Delete</button>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">No staff accounts found. Click <strong>Invite Staff</strong> to add your first team member.</td></tr>';
+    } catch(e) { console.error(e); document.getElementById('staff-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red);padding:2rem">Error loading staff. Run the staff_accounts migration first.</td></tr>'; }
+  }
+
+  function openInviteStaffModal() {
+    document.getElementById('modal-title').textContent = 'Invite Staff Member';
+    document.getElementById('modal-body').innerHTML = `
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="sf-fname" class="form-control" placeholder="Jane" />
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="sf-lname" class="form-control" placeholder="Smith" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Email Address</label>
+          <input type="email" id="sf-email" class="form-control" placeholder="staff@courtplus.bm" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Temporary Password</label>
+          <input type="text" id="sf-password" class="form-control" value="safehands" />
+          <small style="color:var(--muted)">Staff must change this on first login.</small>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="sf-role" class="form-control">
+            <option value="staff">Staff</option>
+            <option value="manager">Manager</option>
+            <option value="front_desk">Front Desk</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" id="sf-dept" class="form-control" placeholder="e.g. Court Operations" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Phone</label>
+          <input type="tel" id="sf-phone" class="form-control" placeholder="+1 441 000 0000" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Notes</label>
+          <textarea id="sf-notes" class="form-control" rows="2" placeholder="Optional notes about this staff member"></textarea>
+        </div>
+      </div>`;
+    document.getElementById('modal-overlay').classList.add('open');
+    window._modalSave = async () => {
+      const fname = document.getElementById('sf-fname').value.trim();
+      const lname = document.getElementById('sf-lname').value.trim();
+      const email = document.getElementById('sf-email').value.trim();
+      const password = document.getElementById('sf-password').value;
+      const role = document.getElementById('sf-role').value;
+      const dept = document.getElementById('sf-dept').value.trim();
+      const phone = document.getElementById('sf-phone').value.trim();
+      const notes = document.getElementById('sf-notes').value.trim();
+      if (!fname || !lname || !email) { showToast('Name and email are required.', 'error'); return; }
+      // Create Supabase Auth user via admin API
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (sb._token || SUPABASE_ANON_KEY), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: password || 'safehands', email_confirm: true })
+      });
+      const authData = await res.json();
+      // Insert into staff_accounts table
+      const { error } = await sb.from('staff_accounts').insert({
+        auth_user_id: authData.id || null,
+        full_name: fname + ' ' + lname,
+        email, role, department: dept, phone, notes, is_active: true
+      });
+      if (error) { showToast('Error: ' + (error.message || 'Could not create staff account'), 'error'); return; }
+      showToast(`Staff account created for ${fname} ${lname}!`, 'success');
+      document.getElementById('modal-overlay').classList.remove('open');
+      loadStaff();
+    };
+  }
+
+  async function editStaff(id) {
+    const { data: s } = await sb.from('staff_accounts').select('*').eq('id', id).single();
+    if (!s) return;
+    document.getElementById('modal-title').textContent = 'Edit Staff Member';
+    document.getElementById('modal-body').innerHTML = `
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Full Name</label>
+          <input type="text" id="sf-fullname" class="form-control" value="${s.full_name||''}" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Email</label>
+          <input type="email" id="sf-email" class="form-control" value="${s.email}" readonly style="opacity:0.6" />
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <select id="sf-role" class="form-control">
+            ${STAFF_ROLES.map(r => `<option value="${r}" ${r===s.role?'selected':''}>${STAFF_ROLE_LABELS[r]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" id="sf-dept" class="form-control" value="${s.department||''}" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Phone</label>
+          <input type="tel" id="sf-phone" class="form-control" value="${s.phone||''}" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="sf-status" class="form-control">
+            <option value="true" ${s.is_active?'selected':''}>Active</option>
+            <option value="false" ${!s.is_active?'selected':''}>Inactive</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Notes</label>
+          <textarea id="sf-notes" class="form-control" rows="2">${s.notes||''}</textarea>
+        </div>
+      </div>`;
+    document.getElementById('modal-overlay').classList.add('open');
+    window._modalSave = async () => {
+      const { error } = await sb.from('staff_accounts').eq('id', id).update({
+        full_name: document.getElementById('sf-fullname').value.trim(),
+        role: document.getElementById('sf-role').value,
+        department: document.getElementById('sf-dept').value.trim(),
+        phone: document.getElementById('sf-phone').value.trim(),
+        is_active: document.getElementById('sf-status').value === 'true',
+        notes: document.getElementById('sf-notes').value.trim()
+      });
+      if (error) { showToast('Error: ' + error.message, 'error'); return; }
+      showToast('Staff account updated!', 'success');
+      document.getElementById('modal-overlay').classList.remove('open');
+      loadStaff();
+    };
+  }
+
+  async function toggleStaffStatus(id, currentStatus) {
+    const { error } = await sb.from('staff_accounts').eq('id', id).update({ is_active: !currentStatus });
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
+    showToast(currentStatus ? 'Staff account deactivated.' : 'Staff account activated.', 'success');
+    loadStaff();
+  }
+
+  // ===== USER AUTH (PUBLIC) =====
+  let _currentUser = null;
+  let _currentUserProfile = null;
+
+  function openUserLoginModal() {
+    const overlay = document.getElementById('user-login-overlay');
+    overlay.style.display = 'flex';
+    if (_currentUser) {
+      showMyBookingsView();
+    } else {
+      showLoginView();
+    }
+  }
+  function closeUserLoginModal() {
+    document.getElementById('user-login-overlay').style.display = 'none';
+  }
+  function showLoginView() {
+    document.getElementById('ul-login-view').style.display = 'block';
+    document.getElementById('ul-forgot-view').style.display = 'none';
+    document.getElementById('ul-mybookings-view').style.display = 'none';
+    const err = document.getElementById('ul-error'); err.style.display = 'none';
+  }
+  function showForgotPassword() {
+    document.getElementById('ul-login-view').style.display = 'none';
+    document.getElementById('ul-forgot-view').style.display = 'block';
+    document.getElementById('ul-mybookings-view').style.display = 'none';
+  }
+  function showMyBookingsView() {
+    document.getElementById('ul-login-view').style.display = 'none';
+    document.getElementById('ul-forgot-view').style.display = 'none';
+    document.getElementById('ul-mybookings-view').style.display = 'block';
+    if (_currentUserProfile) {
+      document.getElementById('ul-welcome-name').textContent = 'Welcome, ' + (_currentUserProfile.full_name || _currentUser.email);
+    }
+    loadMyBookings();
+  }
+  async function userLogin() {
+    const email = document.getElementById('ul-email').value.trim();
+    const password = document.getElementById('ul-password').value;
+    const err = document.getElementById('ul-error');
+    err.style.display = 'none';
+    if (!email || !password) { err.textContent = 'Please enter your email and password.'; err.style.display = 'block'; return; }
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error || !data?.access_token) {
+      err.textContent = 'Invalid email or password. Please try again.';
+      err.style.display = 'block';
+    } else {
+      _currentUser = data.user;
+      // Load user profile
+      const { data: profile } = await sb.from('user_profiles').select('*').eq('email', email).single();
+      _currentUserProfile = profile;
+      // Update nav link
+      const navLink = document.getElementById('nav-account-link');
+      if (navLink) navLink.textContent = profile?.full_name?.split(' ')[0] || 'My Account';
+      showMyBookingsView();
+    }
+  }
+  async function userLogout() {
+    await sb.auth.signOut();
+    _currentUser = null;
+    _currentUserProfile = null;
+    const navLink = document.getElementById('nav-account-link');
+    if (navLink) navLink.textContent = 'My Account';
+    closeUserLoginModal();
+    showToast('Signed out successfully.', 'success');
+  }
+  async function sendPasswordReset() {
+    const email = document.getElementById('ul-reset-email').value.trim();
+    const msg = document.getElementById('ul-forgot-msg');
+    msg.style.display = 'none';
+    if (!email) { msg.textContent = 'Please enter your email address.'; msg.style.background = 'var(--red-soft)'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    msg.textContent = 'If that email is registered, a password reset link has been sent. Please check your inbox.';
+    msg.style.background = 'var(--green-soft)'; msg.style.color = 'var(--green)';
+    msg.style.display = 'block';
+  }
+  async function loadMyBookings() {
+    if (!_currentUser) return;
+    const list = document.getElementById('ul-bookings-list');
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem">Loading...</div>';
+    try {
+      const { data } = await sb.from('bookings')
+        .select('*,courts(name,sport_type)')
+        .eq('user_id', _currentUser.id)
+        .gte('booking_date', new Date().toISOString().split('T')[0])
+        .order('booking_date').order('start_time');
+      const rows = data || [];
+      if (!rows.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem">No upcoming bookings. <a href="#" onclick="closeUserLoginModal();document.getElementById(\'book\').scrollIntoView({behavior:\'smooth\'})" style="color:var(--pink);font-weight:700">Book a court now</a></div>'; return; }
+      list.innerHTML = rows.map(b => `
+        <div style="background:var(--bg);border-radius:14px;padding:1rem 1.2rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <div>
+            <div style="font-weight:700;color:var(--navy);font-size:0.95rem">${b.courts?.name||'Court'} &bull; <span style="color:var(--pink)">${b.courts?.sport_type||b.sport_type}</span></div>
+            <div style="font-size:0.82rem;color:var(--muted);margin-top:0.2rem">${b.booking_date} &bull; ${fmtTime(b.start_time)} &ndash; ${fmtTime(b.end_time)}</div>
+            <div style="margin-top:0.3rem">
+              <span class="status-badge status-${b.status}">${b.status}</span>
+              <span class="status-badge status-${b.payment_status==='paid'?'active':'pending'}" style="margin-left:0.4rem">${b.payment_status}</span>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:800;font-size:1.1rem;color:var(--navy)">$${b.amount_due||10}</div>
+            ${b.status !== 'cancelled' && b.status !== 'completed' ? `<button onclick="cancelMyBooking('${b.id}')" style="background:var(--red-soft);color:var(--red);border:none;border-radius:8px;padding:0.3rem 0.7rem;font-size:0.75rem;cursor:pointer;margin-top:0.3rem">Cancel</button>` : ''}
+          </div>
+        </div>`).join('');
+    } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--red);padding:2rem">Error loading bookings.</div>'; }
+  }
+  async function cancelMyBooking(id) {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
+    const { error } = await sb.from('bookings').eq('id', id).update({ status: 'cancelled' });
+    if (error) { showToast('Error cancelling booking.', 'error'); return; }
+    showToast('Booking cancelled.', 'success');
+    loadMyBookings();
+  }
+  function openMyBookingsModal() {
+    openUserLoginModal();
+  }
+
+  // ===== PUBLIC BOOKING FLOW =====
+  let _bkSport = 'tennis';
+  let _bkSelectedSlot = null;
+  let _bkCourtName = '';
+
+  // Init booking widget on page load
+  async function initBookingWidget() {
+    const dateInput = document.getElementById('bk-date');
+    if (dateInput) {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+      dateInput.min = today;
+      const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + 7);
+      dateInput.max = maxDate.toISOString().split('T')[0];
+    }
+    await loadBookingCourts();
+  }
+
+  async function loadBookingCourts() {
+    const sel = document.getElementById('bk-court');
+    if (!sel) return;
+    const { data } = await sb.from('courts').select('id,name,sport_type,has_floodlights').eq('status','active').order('name');
+    const courts = (data||[]).filter(c => c.sport_type === _bkSport || c.sport_type === 'both');
+    sel.innerHTML = courts.length
+      ? '<option value="">Select a court...</option>' + courts.map(c => `<option value="${c.id}" data-name="${c.name}" data-floodlit="${c.has_floodlights}">${c.name}${c.has_floodlights?' (Floodlit)':''}</option>`).join('')
+      : '<option value="">No courts available for this sport</option>';
+  }
+
+  function selectSport(sport) {
+    _bkSport = sport;
+    document.getElementById('sc-tennis').classList.toggle('active', sport === 'tennis');
+    document.getElementById('sc-pickleball').classList.toggle('active', sport === 'pickleball');
+    loadBookingCourts();
+  }
+
+  async function bkGoStep2() {
+    const date = document.getElementById('bk-date').value;
+    const courtSel = document.getElementById('bk-court');
+    const courtId = courtSel.value;
+    if (!date) { showToast('Please select a date.', 'error'); return; }
+    if (!courtId) { showToast('Please select a court.', 'error'); return; }
+    _bkCourtName = courtSel.options[courtSel.selectedIndex]?.dataset?.name || 'Court';
+    document.getElementById('bk-summary-court').textContent = _bkCourtName;
+    document.getElementById('bk-summary-date').textContent = new Date(date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    // Show step 2
+    document.getElementById('bk-panel-1').style.display = 'none';
+    document.getElementById('bk-panel-2').style.display = 'block';
+    document.getElementById('bk-panel-3').style.display = 'none';
+    document.getElementById('bk-panel-done').style.display = 'none';
+    document.getElementById('bkstep1').style.opacity = '0.6';
+    document.getElementById('bkstep2').style.opacity = '1';
+    document.getElementById('bkstep3').style.opacity = '0.45';
+    _bkSelectedSlot = null;
+    document.getElementById('bk-selected-slot').style.display = 'none';
+    // Load available slots
+    await loadAvailableSlots(courtId, date);
+  }
+
+  async function loadAvailableSlots(courtId, date) {
+    const grid = document.getElementById('bk-slots-grid');
+    grid.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;grid-column:1/-1">Loading available slots...</div>';
+    const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+    // Get all time slots for this court and day
+    const { data: slots } = await sb.from('court_time_slots')
+      .select('*').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('is_active', true).order('start_time');
+    // Get existing bookings for this court and date
+    const { data: booked } = await sb.from('bookings')
+      .select('start_time,end_time,status')
+      .eq('court_id', courtId).eq('booking_date', date)
+      .in('status', ['confirmed','pending']);
+    const bookedTimes = new Set((booked||[]).map(b => b.start_time));
+    if (!slots || !slots.length) {
+      grid.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;grid-column:1/-1">No time slots configured for this court on this day. Please contact the stadium or choose another date.</div>';
+      return;
+    }
+    grid.innerHTML = slots.map(s => {
+      const isBooked = bookedTimes.has(s.start_time);
+      const isPast = date === new Date().toISOString().split('T')[0] && s.start_time < new Date().toTimeString().slice(0,5);
+      const unavailable = isBooked || isPast;
+      return `<button
+        onclick="${unavailable ? '' : `bkSelectSlot('${s.id}','${s.start_time}','${s.end_time}')`}"
+        style="padding:0.75rem 0.5rem;border-radius:12px;border:2px solid ${unavailable?'var(--border)':'var(--blue)'};background:${unavailable?'var(--bg)':'white'};color:${unavailable?'var(--muted)':'var(--navy)'};font-weight:700;font-size:0.88rem;cursor:${unavailable?'not-allowed':'pointer'};transition:all 0.15s;position:relative;opacity:${unavailable?'0.5':'1'}" id="slot-btn-${s.id}">
+        ${fmtTime(s.start_time)}<br><span style="font-size:0.72rem;font-weight:400">${fmtTime(s.end_time)}</span>
+        ${isBooked ? '<br><span style="font-size:0.65rem;color:var(--red);font-weight:700">BOOKED</span>' : ''}
+        ${isPast ? '<br><span style="font-size:0.65rem;color:var(--muted);font-weight:700">PAST</span>' : ''}
+      </button>`;
+    }).join('');
+  }
+
+  function bkSelectSlot(slotId, start, end) {
+    _bkSelectedSlot = { slotId, start, end };
+    // Highlight selected
+    document.querySelectorAll('[id^="slot-btn-"]').forEach(b => {
+      b.style.background = 'white'; b.style.borderColor = 'var(--blue)';
+    });
+    const btn = document.getElementById('slot-btn-' + slotId);
+    if (btn) { btn.style.background = 'var(--blue)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--blue)'; }
+    document.getElementById('bk-slot-label').textContent = fmtTime(start) + ' – ' + fmtTime(end);
+    document.getElementById('bk-selected-slot').style.display = 'block';
+  }
+
+  function bkGoStep1() {
+    document.getElementById('bk-panel-1').style.display = 'block';
+    document.getElementById('bk-panel-2').style.display = 'none';
+    document.getElementById('bk-panel-3').style.display = 'none';
+    document.getElementById('bk-panel-done').style.display = 'none';
+    document.getElementById('bkstep1').style.opacity = '1';
+    document.getElementById('bkstep2').style.opacity = '0.45';
+    document.getElementById('bkstep3').style.opacity = '0.45';
+  }
+
+  function bkGoStep3() {
+    if (!_bkSelectedSlot) { showToast('Please select a time slot.', 'error'); return; }
+    const courtSel = document.getElementById('bk-court');
+    const date = document.getElementById('bk-date').value;
+    const lighting = document.querySelector('input[name="bk-lighting"]:checked')?.value === 'yes';
+    const amount = 10 + (lighting ? 5 : 0);
+    document.getElementById('bk-conf-sport').textContent = _bkSport.charAt(0).toUpperCase() + _bkSport.slice(1);
+    document.getElementById('bk-conf-court').textContent = _bkCourtName;
+    document.getElementById('bk-conf-date').textContent = new Date(date + 'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'});
+    document.getElementById('bk-conf-time').textContent = fmtTime(_bkSelectedSlot.start) + ' – ' + fmtTime(_bkSelectedSlot.end);
+    document.getElementById('bk-conf-lighting').textContent = lighting ? 'Yes (+$5)' : 'No';
+    document.getElementById('bk-conf-amount').textContent = '$' + amount;
+    document.getElementById('bk-panel-1').style.display = 'none';
+    document.getElementById('bk-panel-2').style.display = 'none';
+    document.getElementById('bk-panel-3').style.display = 'block';
+    document.getElementById('bk-panel-done').style.display = 'none';
+    document.getElementById('bkstep1').style.opacity = '0.6';
+    document.getElementById('bkstep2').style.opacity = '0.6';
+    document.getElementById('bkstep3').style.opacity = '1';
+    // Show login required if not logged in
+    const loginReq = document.getElementById('bk-login-required');
+    loginReq.style.display = _currentUser ? 'none' : 'block';
+  }
+
+  async function bkConfirm() {
+    if (!_currentUser) { document.getElementById('bk-login-required').style.display = 'block'; return; }
+    const courtSel = document.getElementById('bk-court');
+    const courtId = courtSel.value;
+    const date = document.getElementById('bk-date').value;
+    const lighting = document.querySelector('input[name="bk-lighting"]:checked')?.value === 'yes';
+    const amount = 10 + (lighting ? 5 : 0);
+    // Check for existing booking conflicts
+    const { data: existing } = await sb.from('bookings')
+      .select('id').eq('user_id', _currentUser.id)
+      .eq('booking_date', date).eq('start_time', _bkSelectedSlot.start)
+      .in('status', ['confirmed','pending']);
+    if (existing && existing.length) { showToast('You already have a booking at this time.', 'error'); return; }
+    // Check max 2 active bookings
+    const { data: activeBookings } = await sb.from('bookings')
+      .select('id').eq('user_id', _currentUser.id)
+      .in('status', ['confirmed','pending'])
+      .gte('booking_date', new Date().toISOString().split('T')[0]);
+    if (activeBookings && activeBookings.length >= 2) { showToast('You can have a maximum of 2 active bookings at a time.', 'error'); return; }
+    const { error } = await sb.from('bookings').insert({
+      user_id: _currentUser.id,
+      court_id: courtId,
+      sport_type: _bkSport,
+      booking_date: date,
+      start_time: _bkSelectedSlot.start,
+      end_time: _bkSelectedSlot.end,
+      player_count: 1,
+      lighting_required: lighting,
+      status: 'pending',
+      payment_status: 'unpaid',
+      amount_due: amount,
+      amount_paid: 0
+    });
+    if (error) { showToast('Booking error: ' + (error.message || 'Please try again.'), 'error'); return; }
+    // Show confirmation
+    document.getElementById('bk-panel-3').style.display = 'none';
+    document.getElementById('bk-panel-done').style.display = 'block';
+    document.getElementById('bk-done-summary').innerHTML = `
+      <strong>${_bkCourtName}</strong> &bull; ${_bkSport}<br>
+      ${date} &bull; ${fmtTime(_bkSelectedSlot.start)} &ndash; ${fmtTime(_bkSelectedSlot.end)}<br>
+      Amount due: <strong>$${amount}</strong>`;
+    showToast('Booking confirmed!', 'success');
+  }
+
+  function bkReset() {
+    _bkSelectedSlot = null;
+    bkGoStep1();
+    initBookingWidget();
+  }
+
+  // Init on load
+  window.addEventListener('load', () => {
+    initBookingWidget();
+    // Check if user is already logged in via stored session
+    const stored = sessionStorage.getItem('sb_token');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.access_token) {
+          sb._token = parsed.access_token;
+          sb._user = parsed.user;
+          _currentUser = parsed.user;
+          const navLink = document.getElementById('nav-account-link');
+          if (navLink && parsed.user?.email) navLink.textContent = 'My Account';
+        }
+      } catch(e) {}
+    }
+  });
 </script>
 </body>
 </html>
