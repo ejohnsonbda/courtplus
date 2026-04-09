@@ -337,8 +337,8 @@
         W.E.R. Joell Tennis Stadium is home to world-class tennis and pickleball courts in the heart of Bermuda. Register, book your court, and pay online in three simple steps.
       </p>
       <div class="cta-group">
-        <a href="https://app.courtreserve.com/Online/Account/LogIn/8636" target="_blank" rel="noopener" class="btn btn-primary">Register Free</a>
-        <a href="https://app.courtreserve.com/Online/Reservations/Index/8636" target="_blank" rel="noopener" class="btn btn-secondary">Book a Court</a>
+        <a href="#register" onclick="openRegisterModal()" class="btn btn-primary">Register Free</a>
+        <a href="#book" class="btn btn-secondary">Book a Court</a>
         <a href="#" target="_blank" rel="noopener" class="btn btn-green">Pay Online</a>
       </div>
       <div class="hero-stats">
@@ -384,14 +384,14 @@
         <div class="step-card">
           <div class="step-num">1</div>
           <h3>Register</h3>
-          <p>Create your free CourtReserve account to access all booking features.</p>
-          <a href="https://app.courtreserve.com/Online/Account/LogIn/8636" target="_blank" rel="noopener" class="btn btn-primary">Register Free</a>
+          <p>Create your free account to access all booking features. It only takes a minute.</p>
+          <a href="#register" onclick="openRegisterModal()" class="btn btn-primary">Register Free</a>
         </div>
         <div class="step-card">
           <div class="step-num">2</div>
           <h3>Book</h3>
-          <p id="step2-desc">Select your tennis court, date, and time on CourtReserve.</p>
-          <a href="https://app.courtreserve.com/Online/Reservations/Index/8636" target="_blank" rel="noopener" id="step2-btn" class="btn btn-secondary">Book on CourtReserve</a>
+          <p id="step2-desc">Select your tennis court, date, and time slot directly in the app.</p>
+          <a href="#book" id="step2-btn" class="btn btn-secondary">Book a Court</a>
         </div>
         <div class="step-card">
           <div class="step-num">3</div>
@@ -496,7 +496,7 @@
         <ul class="bullet-list">
           <li>Bermuda's only national tennis stadium</li>
           <li>Tennis and pickleball for all skill levels</li>
-          <li>Online booking via CourtReserve platform</li>
+          <li>Online booking via the CourtPlus app</li>
           <li>Membership options for regular players</li>
           <li>Junior development and adult programmes</li>
           <li>Competitive leagues and tournaments</li>
@@ -673,8 +673,8 @@
       <p>Bermuda's home of tennis and pickleball.</p>
       <span>Book your court today and experience world-class facilities in a stunning island setting.</span>
       <div class="cta-group">
-        <a href="https://app.courtreserve.com/Online/Account/LogIn/8636" target="_blank" rel="noopener" class="btn btn-primary">Register Free</a>
-        <a href="https://app.courtreserve.com/Online/Reservations/Index/8636" target="_blank" rel="noopener" class="btn btn-secondary">Book a Court</a>
+        <a href="#register" onclick="openRegisterModal()" class="btn btn-primary">Register Free</a>
+        <a href="#book" class="btn btn-secondary">Book a Court</a>
       </div>
     </div>
   </div>
@@ -685,8 +685,8 @@
   <div class="container">
     <div class="app-section">
       <div>
-        <h2>Book on the CourtReserve App</h2>
-        <p>Download the CourtReserve app to book courts, manage your schedule, and track your bookings from anywhere.</p>
+        <h2>Book on the CourtPlus App</h2>
+        <p>Download the CourtPlus app to book courts, manage your schedule, and track your bookings from anywhere.</p>
         <div class="app-btns">
           <a href="#" class="app-btn">
             <span class="app-icon">&#63743;</span>
@@ -789,7 +789,7 @@
       </div>
       <div class="footer-col">
         <h5>Platforms</h5>
-        <a href="https://app.courtreserve.com/Online/Account/LogIn/8636" target="_blank" rel="noopener">CourtReserve</a>
+        <a href="#register" onclick="routeToPublic(event,'register')">Register</a>
         <a href="#" target="_blank" rel="noopener">Pay Online</a>
         <a href="#/admin" onclick="routeAdmin(event)">Admin Login</a>
       </div>
@@ -1142,6 +1142,80 @@
     history.pushState(null, '', '#/admin');
     checkAdminRoute();
   }
+  function routeToPublic(e, anchor) {
+    if (e) e.preventDefault();
+    history.pushState(null, '', '#');
+    checkAdminRoute();
+    if (anchor) setTimeout(() => { const el = document.getElementById(anchor); if (el) el.scrollIntoView({behavior:'smooth'}); }, 100);
+  }
+  function openRegisterModal() {
+    // Show the built-in registration modal
+    document.getElementById('modal-title').textContent = 'Create Your Free Account';
+    document.getElementById('modal-body').innerHTML = `
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="font-size:3rem">&#127934;</div>
+        <p style="color:var(--muted);font-size:0.95rem;margin-top:0.5rem">Register to book tennis and pickleball courts at W.E.R. Joell Tennis Stadium.</p>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" id="reg-fname" class="form-control" placeholder="e.g. Jane" />
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" id="reg-lname" class="form-control" placeholder="e.g. Smith" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Email Address</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="your@email.com" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Phone Number</label>
+          <input type="tel" id="reg-phone" class="form-control" placeholder="+1 441 000 0000" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Password</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Choose a secure password" />
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Membership Type</label>
+          <select id="reg-membership" class="form-control">
+            <option value="recreational">Recreational</option>
+            <option value="adult">Adult</option>
+            <option value="junior">Junior (under 18)</option>
+            <option value="senior">Senior (60+)</option>
+            <option value="competitive">Competitive</option>
+          </select>
+        </div>
+      </div>`;
+    document.getElementById('modal-overlay').classList.add('open');
+    window._modalSave = async () => {
+      const fname = document.getElementById('reg-fname').value.trim();
+      const lname = document.getElementById('reg-lname').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const membership = document.getElementById('reg-membership').value;
+      if (!fname || !lname || !email || !password) { showToast('Please fill in all required fields.', 'error'); return; }
+      if (password.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
+      // Register via Supabase Auth
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const authData = await res.json();
+      if (!res.ok || authData.error) { showToast('Registration error: ' + (authData.error?.message || authData.msg || 'Please try again.'), 'error'); return; }
+      // Create user profile
+      await fetch(`${SUPABASE_URL}/rest/v1/user_profiles`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ id: authData.user?.id, full_name: fname + ' ' + lname, email, phone, membership_type: membership, status: 'active' })
+      });
+      document.getElementById('modal-overlay').classList.remove('open');
+      showToast('Account created! Please check your email to confirm your registration.', 'success');
+    };
+  }
 
   function checkAdminRoute() {
     const hash = window.location.hash;
@@ -1302,13 +1376,13 @@
   }
 
   const STATIC_FAQS = [
-    { category:'booking', question:'How do I book a court?', answer:'Register for a free CourtReserve account, then select your court, date, and time. Complete payment through the WER Joell payment portal.' },
-    { category:'booking', question:'Can I book same-day?', answer:'Yes, same-day bookings are available subject to court availability on CourtReserve.' },
-    { category:'payment', question:'How do I pay for my booking?', answer:'After booking on CourtReserve, complete your payment through the W.E.R. Joell payment portal. Payment links are available on this site.' },
+    { category:'booking', question:'How do I book a court?', answer:'Register for a free CourtPlus account, then select your sport, court, date, and time slot directly in the app. Complete payment through the W.E.R. Joell payment portal.' },
+    { category:'booking', question:'Can I book same-day?', answer:'Yes, same-day bookings are available subject to court availability. Check the app for real-time slot availability.' },
+    { category:'payment', question:'How do I pay for my booking?', answer:'After booking your court in the app, complete your payment through the W.E.R. Joell payment portal. Payment links are available on this site.' },
     { category:'payment', question:'What payment methods are accepted?', answer:'Credit and debit cards are accepted through the online payment portal.' },
     { category:'membership', question:'What membership options are available?', answer:'We offer Adult, Junior (under 18), Senior (60+), Recreational, and Competitive memberships. See the Pricing section for current rates.' },
     { category:'membership', question:'How do I sign up for a membership?', answer:'Contact us directly or visit the stadium to sign up for a membership. Membership holders receive discounted court hire rates.' },
-    { category:'facilities', question:'Are the courts floodlit for evening play?', answer:'Yes, selected courts have floodlighting available for evening sessions. Check availability when booking on CourtReserve.' },
+    { category:'facilities', question:'Are the courts floodlit for evening play?', answer:'Yes, selected courts have floodlighting available for evening sessions. Check availability when booking in the app.' },
     { category:'facilities', question:'Is equipment hire available?', answer:'Yes, rackets, paddles, and balls are available for hire at the stadium. See the Pricing section for hire rates.' },
     { category:'general', question:'What is the cancellation policy?', answer:'Cancellations must be made at least 24 hours before your booking time. Please contact us for late cancellations.' },
     { category:'general', question:'Are coaching sessions available?', answer:'Yes, professional coaching is available for juniors and adults. Contact us to arrange individual or group sessions.' },
@@ -1373,10 +1447,10 @@
     const step2 = document.getElementById('step2-desc');
     const step2btn = document.getElementById('step2-btn');
     if (sport === 'pickleball') {
-      step2.textContent = 'Select your pickleball court, date, and time on CourtReserve.';
+      step2.textContent = 'Select your pickleball court, date, and time slot in the app.';
       step2btn.textContent = 'Book Pickleball Court';
     } else {
-      step2.textContent = 'Select your tennis court, date, and time on CourtReserve.';
+      step2.textContent = 'Select your tennis court, date, and time slot in the app.';
       step2btn.textContent = 'Book Tennis Court';
     }
   }
