@@ -420,7 +420,7 @@ tbody tr:hover{background:#fafafa}
         <p>Hard &amp; clay courts. Singles, doubles, coaching.</p>
       </div>
       <div class="sport-card" id="sc-pickleball" onclick="selectSport('pickleball')">
-        <div class="sport-icon">🏓</div>
+        <div class="sport-icon"><img src="assets/pickleball.png" alt="Pickleball" style="width:2.5rem;height:2.5rem;object-fit:contain"/></div>
         <h3>Pickleball</h3>
         <p>Dedicated courts. All skill levels welcome.</p>
       </div>
@@ -1449,6 +1449,14 @@ async function bkLoadSlots() {
   const { data: slots } = await sb.from('court_time_slots').select('*').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('status', 'active').order('start_time');
   const { data: booked } = await sb.from('bookings').select('start_time,end_time').eq('court_id', courtId).eq('booking_date', date).neq('status', 'cancelled');
   const bookedTimes = new Set((booked || []).map(b => b.start_time));
+  // Load conflict rules and find times blocked by linked courts
+  const { data: conflictRules } = await sb.from('court_conflict_rules').select('conflicts_with_court_id').eq('court_id', courtId);
+  let conflictBlockedTimes = new Set();
+  if (conflictRules && conflictRules.length) {
+    const conflictIds = conflictRules.map(r => r.conflicts_with_court_id);
+    const { data: linkedBooked } = await sb.from('bookings').select('start_time').in('court_id', conflictIds).eq('booking_date', date).neq('status', 'cancelled');
+    conflictBlockedTimes = new Set((linkedBooked || []).map(b => b.start_time));
+  }
   const now = new Date();
   const isToday = date === now.toISOString().split('T')[0];
   const grid = document.getElementById('bk-slot-grid');
@@ -1462,11 +1470,14 @@ async function bkLoadSlots() {
   document.getElementById('bk-confirm-btn').style.display = 'none';
   grid.innerHTML = slots.map(slot => {
     const isBooked = bookedTimes.has(slot.start_time);
+    const isConflict = conflictBlockedTimes.has(slot.start_time);
     const isPast = isToday && slot.start_time < now.toTimeString().substring(0, 5);
-    const cls = isBooked ? 'booked' : isPast ? 'past' : '';
-    return `<button class="slot-btn ${cls}" onclick="selectSlot(this,'${slot.id}','${slot.start_time}','${slot.end_time}')" ${isBooked || isPast ? 'disabled' : ''}>
+    const cls = isBooked ? 'booked' : isConflict ? 'booked' : isPast ? 'past' : '';
+    const label = isBooked ? 'Booked' : isConflict ? 'Unavailable' : isPast ? 'Past' : 'Available';
+    const ttip = isConflict ? 'title="Unavailable — a linked court is booked at this time"' : '';
+    return `<button class="slot-btn ${cls}" onclick="selectSlot(this,'${slot.id}','${slot.start_time}','${slot.end_time}')" ${isBooked || isConflict || isPast ? 'disabled' : ''} ${ttip}>
       ${slot.start_time?.substring(0,5)} – ${slot.end_time?.substring(0,5)}
-      <span class="slot-status">${isBooked ? 'Booked' : isPast ? 'Past' : 'Available'}</span>
+      <span class="slot-status">${label}</span>
     </button>`;
   }).join('');
   bkGoStep(2);
@@ -1554,6 +1565,16 @@ async function confirmBooking(total, courtId, date, lighting) {
   if (existing && existing.length >= 2) { showToast('You already have 2 active bookings. Please cancel one first.', 'error'); return; }
   const { data: conflict } = await sb.from('bookings').select('id').eq('court_id', courtId).eq('booking_date', date).eq('start_time', _selectedSlot.startTime).neq('status', 'cancelled');
   if (conflict && conflict.length) { showToast('This slot was just booked. Please choose another.', 'error'); bkGoStep(2); return; }
+  // Enforce linked court conflict rules
+  const { data: conflictRules } = await sb.from('court_conflict_rules').select('conflicts_with_court_id').eq('court_id', courtId);
+  if (conflictRules && conflictRules.length) {
+    const conflictIds = conflictRules.map(r => r.conflicts_with_court_id);
+    const { data: linkedConflicts } = await sb.from('bookings').select('id, court_id').in('court_id', conflictIds).eq('booking_date', date).eq('start_time', _selectedSlot.startTime).neq('status', 'cancelled');
+    if (linkedConflicts && linkedConflicts.length) {
+      showToast('This time slot is unavailable due to a linked court booking. Please choose another time.', 'error');
+      bkGoStep(2); return;
+    }
+  }
   const { data: court } = await sb.from('courts').select('sport_type').eq('id', courtId).single();
   const { error } = await sb.from('bookings').insert({
     user_id: _currentUser.id,
