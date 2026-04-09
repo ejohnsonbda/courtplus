@@ -1450,7 +1450,17 @@
   }
 
   window.addEventListener('hashchange', checkAdminRoute);
-  window.addEventListener('load', () => { checkAdminRoute(); loadPublicData(); });
+  window.addEventListener('load', async () => {
+    // Load public data only when on the public site
+    const hash = window.location.hash;
+    const isAdmin = hash === '#/admin' || hash.startsWith('#/admin/');
+    if (!isAdmin) {
+      await loadPublicData();
+      await initBookingWidget();
+    }
+    // Route check must run last, after all data loads
+    checkAdminRoute();
+  });
 
   // ===== ADMIN AUTH =====
   async function adminLogin() {
@@ -2639,24 +2649,18 @@
     initBookingWidget();
   }
 
-  // Init on load
-  window.addEventListener('load', () => {
-    initBookingWidget();
-    // Check if user is already logged in via stored session
-    const stored = sessionStorage.getItem('sb_token');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.access_token) {
-          sb._token = parsed.access_token;
-          sb._user = parsed.user;
-          _currentUser = parsed.user;
-          const navLink = document.getElementById('nav-account-link');
-          if (navLink && parsed.user?.email) navLink.textContent = 'My Account';
-        }
-      } catch(e) {}
-    }
-  });
+  // Session restore for public user (localStorage)
+  const _savedUserToken = localStorage.getItem('cp_user_token');
+  if (_savedUserToken) {
+    try {
+      const _savedUserData = JSON.parse(localStorage.getItem('cp_user_data') || 'null');
+      if (_savedUserData) {
+        _currentUser = _savedUserData;
+        const navLink = document.getElementById('nav-account-link');
+        if (navLink) navLink.textContent = (_savedUserData.user_metadata?.full_name || '').split(' ')[0] || 'My Account';
+      }
+    } catch(e) {}
+  }
 </script>
 </body>
 </html>
