@@ -90,12 +90,15 @@
     .section-heading .tag{display:inline-block;color:var(--pink);font-weight:800;letter-spacing:0.16em;font-size:0.75rem;text-transform:uppercase;margin-bottom:0.8rem}
     .section-heading h2{font-family:'Montserrat',sans-serif;font-size:clamp(2rem,4vw,3rem);color:var(--navy);margin-bottom:0.9rem}
     .section-heading p{color:var(--muted);font-size:1rem}
-    .feature-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.25rem}
-    .feature-card{background:var(--white);border-radius:var(--radius);padding:1.5rem;border:1px solid var(--border);box-shadow:var(--shadow);transition:transform 0.25s,box-shadow 0.25s}
-    .feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
-    .icon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;font-size:1.35rem;margin-bottom:1rem;background:linear-gradient(135deg,var(--pink-soft),var(--blue-soft))}
-    .feature-card h3{font-family:'Montserrat',sans-serif;font-size:1.05rem;color:var(--navy);margin-bottom:0.55rem}
-    .feature-card p{color:var(--muted);font-size:0.95rem}
+    .feature-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1.5rem}
+    .feature-card{background:var(--white);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);transition:transform 0.25s,box-shadow 0.25s;display:flex;flex-direction:column}
+    .feature-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+    .feature-card-img{width:100%;height:180px;object-fit:cover;display:block;background:linear-gradient(135deg,var(--pink-soft),var(--blue-soft))}
+    .feature-card-img-placeholder{width:100%;height:180px;background:linear-gradient(135deg,var(--pink-soft) 0%,var(--blue-soft) 100%);display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--muted);font-weight:600;letter-spacing:0.05em;text-transform:uppercase}
+    .feature-card-body{padding:1.25rem 1.4rem 1.5rem;flex:1}
+    .feature-card-tag{display:inline-block;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--pink);margin-bottom:0.5rem}
+    .feature-card h3{font-family:'Montserrat',sans-serif;font-size:1rem;color:var(--navy);margin-bottom:0.45rem}
+    .feature-card p{color:var(--muted);font-size:0.88rem;line-height:1.55}
     .split{display:grid;grid-template-columns:0.95fr 1.05fr;gap:2rem;align-items:center}
     .image-panel{border-radius:28px;overflow:hidden;min-height:520px;box-shadow:var(--shadow-lg)}
     .image-panel img{width:100%;height:100%;object-fit:cover}
@@ -414,44 +417,68 @@
     </div>
     <div class="feature-grid">
       <article class="feature-card">
-        <div class="icon">&#127934;</div>
-        <h3>Hard Courts</h3>
-        <p>Professional-grade hard court surfaces ideal for competitive play and coaching sessions.</p>
+        <img class="feature-card-img" src="https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&w=600&q=80" alt="Hard Courts" />
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Tennis</span>
+          <h3>Hard Courts</h3>
+          <p>Professional-grade hard court surfaces ideal for competitive play and coaching sessions.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#129355;</div>
-        <h3>Clay Courts</h3>
-        <p>Classic clay courts offering a slower game and a traditional tennis experience.</p>
+        <img class="feature-card-img" src="https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=600&q=80" alt="Clay Courts" />
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Tennis</span>
+          <h3>Clay Courts</h3>
+          <p>Classic clay courts offering a slower game and a traditional tennis experience.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#127955;</div>
-        <h3>Pickleball Courts</h3>
-        <p>Dedicated pickleball courts with proper markings, nets, and lighting for evening play.</p>
+        <img class="feature-card-img" src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=600&q=80" alt="Pickleball Courts" />
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Pickleball</span>
+          <h3>Pickleball Courts</h3>
+          <p>Dedicated pickleball courts with proper markings, nets, and lighting for evening play.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#128262;</div>
-        <h3>Floodlit Courts</h3>
-        <p>Evening sessions available on floodlit courts. Play after sunset in comfort.</p>
+        <img class="feature-card-img" src="https://images.unsplash.com/photo-1560012057-4372e14c5085?auto=format&fit=crop&w=600&q=80" alt="Floodlit Courts" />
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Evening Play</span>
+          <h3>Floodlit Courts</h3>
+          <p>3 courts with full floodlighting for evening sessions. Play comfortably after sunset.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#127936;</div>
-        <h3>Practice Wall</h3>
-        <p>Solo practice wall for warming up, drills, and improving your groundstrokes.</p>
+        <div class="feature-card-img-placeholder">Your Photo Here</div>
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Training</span>
+          <h3>Practice Wall</h3>
+          <p>Solo practice wall for warming up, drills, and improving your groundstrokes.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#127952;</div>
-        <h3>Pro Shop</h3>
-        <p>Equipment hire and purchase available on-site. Rackets, balls, and accessories.</p>
+        <div class="feature-card-img-placeholder">Your Photo Here</div>
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Equipment</span>
+          <h3>Pro Shop</h3>
+          <p>Equipment hire and purchase available on-site. Rackets, balls, and accessories.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#127943;</div>
-        <h3>Coaching</h3>
-        <p>Professional coaching for juniors and adults. Group and private lessons available.</p>
+        <div class="feature-card-img-placeholder">Your Photo Here</div>
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Programmes</span>
+          <h3>Coaching</h3>
+          <p>Professional coaching for juniors and adults. Group and private lessons available.</p>
+        </div>
       </article>
       <article class="feature-card">
-        <div class="icon">&#128101;</div>
-        <h3>Changing Rooms</h3>
-        <p>Clean, modern changing facilities with showers and secure lockers.</p>
+        <div class="feature-card-img-placeholder">Your Photo Here</div>
+        <div class="feature-card-body">
+          <span class="feature-card-tag">Amenities</span>
+          <h3>Changing Rooms</h3>
+          <p>Clean, modern changing facilities with showers and secure lockers.</p>
+        </div>
       </article>
     </div>
   </div>
