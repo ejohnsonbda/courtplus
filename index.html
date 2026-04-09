@@ -78,13 +78,13 @@ img{max-width:100%;display:block}
 .section-sub{color:var(--muted);font-size:1.05rem;max-width:600px;margin-bottom:3rem}
 
 /* ===== SPORT SELECTOR ===== */
-.sport-selector{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:3rem}
-.sport-card{background:var(--white);border:2px solid var(--border);border-radius:var(--radius-lg);padding:2rem;cursor:pointer;transition:all .25s;text-align:center}
+.sport-selector{display:flex;justify-content:center;gap:1rem;margin-bottom:3rem}
+.sport-card{background:var(--white);border:2px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem 1.75rem;cursor:pointer;transition:all .25s;text-align:center;width:180px;flex-shrink:0}
 .sport-card:hover{border-color:var(--blue);box-shadow:var(--shadow-md)}
 .sport-card.active{border-color:var(--pink);background:var(--pink-soft);box-shadow:0 0 0 3px rgba(233,30,140,.15)}
-.sport-card .sport-icon{font-size:2.5rem;margin-bottom:0.75rem}
-.sport-card h3{font-family:'Montserrat',sans-serif;font-size:1.2rem;font-weight:800;color:var(--navy);margin-bottom:0.4rem}
-.sport-card p{color:var(--muted);font-size:0.9rem}
+.sport-card .sport-icon{font-size:2rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:center;height:2.5rem}
+.sport-card h3{font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:0.25rem}
+.sport-card p{color:var(--muted);font-size:0.8rem}
 
 /* ===== BOOKING WIDGET ===== */
 .booking-widget{background:var(--white);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden}
@@ -420,7 +420,7 @@ tbody tr:hover{background:#fafafa}
         <p>Hard &amp; clay courts. Singles, doubles, coaching.</p>
       </div>
       <div class="sport-card" id="sc-pickleball" onclick="selectSport('pickleball')">
-        <div class="sport-icon"><img src="assets/pickleball.png" alt="Pickleball" style="width:2.5rem;height:2.5rem;object-fit:contain"/></div>
+        <div class="sport-icon"><img src="assets/pickleball.png" alt="Pickleball" style="width:2rem;height:2rem;object-fit:contain;display:block;margin:auto"/></div>
         <h3>Pickleball</h3>
         <p>Dedicated courts. All skill levels welcome.</p>
       </div>
