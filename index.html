@@ -1213,7 +1213,7 @@ async function showUserDashboard(tab) {
   document.getElementById('user-modal-title').textContent = 'My Account';
   document.getElementById('user-modal-body').innerHTML = `<div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div>`;
   document.getElementById('user-modal').classList.add('open');
-  const { data: bookings } = await sb.from('bookings').select('*,courts(name,sport_type)').eq('user_id', _currentUser.id).order('booking_date', { ascending: false });
+  const { data: bookings } = await sb.from('bookings').select('*,courts(name,sport_type)').eq('user_profile_id', _currentUser.id).order('booking_date', { ascending: false });
   const name = (_currentUser.user_metadata?.full_name || _currentUser.email || 'Player');
   const upcoming = (bookings || []).filter(b => b.booking_date >= new Date().toISOString().split('T')[0] && b.status !== 'cancelled');
   const past = (bookings || []).filter(b => b.booking_date < new Date().toISOString().split('T')[0] || b.status === 'cancelled');
@@ -1414,13 +1414,13 @@ function selectSport(sport) {
 }
 
 async function loadBookingCourts() {
-  const { data } = await sb.from('courts').select('id,name,sport_type').eq('is_active', true).eq('sport_type', _selectedSport).order('name');
+  const { data } = await sb.from('courts').select('id,name,sport_type').eq('status', 'active').eq('sport_type', _selectedSport).order('name');
   const sel = document.getElementById('bk-court');
   sel.innerHTML = data && data.length ? data.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '<option value="">No courts available</option>';
 }
 
 async function loadCalendarCourts() {
-  const { data } = await sb.from('courts').select('id,name,sport_type').eq('is_active', true).order('name');
+  const { data } = await sb.from('courts').select('id,name,sport_type').eq('status', 'active').order('name');
   const sel = document.getElementById('cal-court-filter');
   sel.innerHTML = '<option value="">All Courts</option>' + (data || []).map(c => `<option value="${c.id}">${c.name} (${c.sport_type})</option>`).join('');
   renderPublicCalendar();
@@ -1590,7 +1590,7 @@ async function confirmBooking(total, courtId, date, lighting) {
     return;
   }
   const payMethod = document.getElementById('pm-card').classList.contains('selected') ? 'card' : 'desk';
-  const { data: existing } = await sb.from('bookings').select('id').eq('user_id', _currentUser.id).eq('status', 'confirmed').gte('booking_date', new Date().toISOString().split('T')[0]);
+  const { data: existing } = await sb.from('bookings').select('id').eq('user_profile_id', _currentUser.id).eq('status', 'confirmed').gte('booking_date', new Date().toISOString().split('T')[0]);
   if (existing && existing.length >= 2) { showToast('You already have 2 active bookings. Please cancel one first.', 'error'); return; }
   const { data: conflict } = await sb.from('bookings').select('id').eq('court_id', courtId).eq('booking_date', date).eq('start_time', _selectedSlot.startTime).neq('status', 'cancelled');
   if (conflict && conflict.length) { showToast('This slot was just booked. Please choose another.', 'error'); bkGoStep(2); return; }
@@ -1606,13 +1606,13 @@ async function confirmBooking(total, courtId, date, lighting) {
   }
   const { data: court } = await sb.from('courts').select('sport_type').eq('id', courtId).single();
   const { error } = await sb.from('bookings').insert({
-    user_id: _currentUser.id,
+    user_profile_id: _currentUser.id,
     court_id: courtId,
     sport_type: court?.sport_type || _selectedSport,
     booking_date: date,
     start_time: _selectedSlot.startTime,
     end_time: _selectedSlot.endTime,
-    lighting_required: lighting === 'yes',
+    duration_hours: 1,
     amount_due: total,
     amount_paid: payMethod === 'card' ? total : 0,
     payment_status: payMethod === 'card' ? 'paid' : 'pending',
@@ -1691,7 +1691,7 @@ async function loadDashboard() {
     sb.from('user_profiles').select('*', { count: 'exact', head: true }),
     sb.from('bookings').select('*', { count: 'exact', head: true }),
     sb.from('bookings').select('amount_paid').eq('payment_status', 'paid'),
-    sb.from('courts').select('*', { count: 'exact', head: true }).eq('is_active', true)
+    sb.from('courts').select('*', { count: 'exact', head: true }).eq('status', 'active')
   ]);
   const totalRev = (revData || []).reduce((s, r) => s + (r.amount_paid || 0), 0);
   document.getElementById('dc-users').textContent = uCount || 0;
