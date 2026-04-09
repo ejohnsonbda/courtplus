@@ -1213,7 +1213,7 @@ async function showUserDashboard(tab) {
   document.getElementById('user-modal-title').textContent = 'My Account';
   document.getElementById('user-modal-body').innerHTML = `<div style="text-align:center;padding:1rem;color:var(--muted)">Loading...</div>`;
   document.getElementById('user-modal').classList.add('open');
-  const { data: bookings } = await sb.from('bookings').select('*,courts(name,sport_type)').eq('user_id', _currentUser.id).order('booking_date', { ascending: false }).limit(20);
+  const { data: bookings } = await sb.from('bookings').select('*,courts(name,sport_type)').eq('user_id', _currentUser.id).order('booking_date', { ascending: false });
   const name = (_currentUser.user_metadata?.full_name || _currentUser.email || 'Player');
   const upcoming = (bookings || []).filter(b => b.booking_date >= new Date().toISOString().split('T')[0] && b.status !== 'cancelled');
   const past = (bookings || []).filter(b => b.booking_date < new Date().toISOString().split('T')[0] || b.status === 'cancelled');
@@ -1358,7 +1358,7 @@ function renderPricingGrid(items) {
       <div class="price-cat">${p.category?.replace('_',' ').toUpperCase()}</div>
       <h3>${p.label}</h3>
       ${p.sport_type ? `<div style="margin-bottom:0.75rem"><span class="tag tag-${p.sport_type}">${p.sport_type}</span></div>` : ''}
-      <div class="price-amount">$${p.price_bmd}</div>
+      <div class="price-amount">$${(p.price_per_hour || p.price_flat || 0)}</div>
       <div class="price-period">${p.period || 'per session'} BMD</div>
       ${p.notes ? `<div style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem">${p.notes}</div>` : ''}
     </div>`).join('');
@@ -1496,22 +1496,49 @@ async function bkGoStep3() {
   const date = document.getElementById('bk-date').value;
   const courtId = document.getElementById('bk-court').value;
   const lighting = document.querySelector('input[name="lighting"]:checked').value;
-  const { data: court } = await sb.from('courts').select('name,sport_type').eq('id', courtId).single();
-  const basePrice = 10;
-  const lightingFee = lighting === 'yes' ? 5 : 0;
-  const total = basePrice + lightingFee;
+  const { data: court } = await sb.from('courts').select('name,sport_type,is_free').eq('id', courtId).single();
+
+  // Calculate duration in hours from slot start/end time
+  const [sh, sm] = (_selectedSlot.startTime || '08:00:00').split(':').map(Number);
+  const [eh, em] = (_selectedSlot.endTime || '09:00:00').split(':').map(Number);
+  const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+
+  // Determine hourly rate from membership type
+  // Rates: Adult $12/hr, Senior $10/hr, Junior $8/hr, Recreational $12/hr, Competitive/Tournament $8/hr
+  // Practice walls are free
+  let hourlyRate = 12; // default adult rate
+  let rateLabel = 'Court Hire (Adult)';
+  if (court?.is_free) {
+    hourlyRate = 0;
+    rateLabel = 'Practice Wall (Free)';
+  } else if (_currentUser) {
+    const { data: profile } = await sb.from('user_profiles').select('membership_type').eq('id', _currentUser.id).single();
+    const membership = profile?.membership_type || 'recreational';
+    if (membership === 'junior') { hourlyRate = 8; rateLabel = 'Court Hire (Junior)'; }
+    else if (membership === 'senior') { hourlyRate = 10; rateLabel = 'Court Hire (Senior)'; }
+    else if (membership === 'competitive') { hourlyRate = 8; rateLabel = 'Court Hire (Tournament)'; }
+    else { hourlyRate = 12; rateLabel = 'Court Hire (Adult)'; }
+  }
+
+  const courtFee = parseFloat((hourlyRate * durationHours).toFixed(2));
+  const lightingFee = lighting === 'yes' ? parseFloat((10 * durationHours).toFixed(2)) : 0;
+  const total = parseFloat((courtFee + lightingFee).toFixed(2));
+
   document.getElementById('bk-summary').innerHTML = `
     <h3 style="font-family:'Montserrat',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:1.5rem">Booking Summary</h3>
     <div class="pay-summary">
       <div class="pay-summary-row"><span>Sport</span><span><span class="tag tag-${court?.sport_type}">${court?.sport_type}</span></span></div>
       <div class="pay-summary-row"><span>Court</span><span>${court?.name}</span></div>
       <div class="pay-summary-row"><span>Date</span><span>${formatDate(date)}</span></div>
-      <div class="pay-summary-row"><span>Time</span><span>${_selectedSlot.startTime?.substring(0,5)} – ${_selectedSlot.endTime?.substring(0,5)}</span></div>
-      <div class="pay-summary-row"><span>Court Hire</span><span>$${basePrice} BMD</span></div>
-      ${lightingFee ? `<div class="pay-summary-row"><span>Floodlighting</span><span>$${lightingFee} BMD</span></div>` : ''}
-      <div class="pay-summary-row"><span>Total Due</span><span>$${total} BMD</span></div>
+      <div class="pay-summary-row"><span>Start Time</span><span>${_selectedSlot.startTime?.substring(0,5)}</span></div>
+      <div class="pay-summary-row"><span>End Time</span><span>${_selectedSlot.endTime?.substring(0,5)}</span></div>
+      <div class="pay-summary-row"><span>Duration</span><span>${durationHours} hour${durationHours !== 1 ? 's' : ''}</span></div>
+      <div class="pay-summary-row"><span>${rateLabel}</span><span>${courtFee === 0 ? 'FREE' : '$' + courtFee + ' BMD'}</span></div>
+      ${lightingFee ? `<div class="pay-summary-row"><span>Floodlighting ($10/hr)</span><span>$${lightingFee} BMD</span></div>` : ''}
+      <div class="pay-summary-row" style="font-weight:700;font-size:1.05rem;color:var(--navy);border-top:2px solid var(--border);padding-top:0.75rem;margin-top:0.5rem"><span>Total Due</span><span>${total === 0 ? 'FREE' : '$' + total + ' BMD'}</span></div>
     </div>
-    <h4 style="font-weight:700;color:var(--navy);margin-bottom:1rem">Select Payment Method</h4>
+    ${total > 0 ? `
+    <h4 style="font-weight:700;color:var(--navy);margin-bottom:1rem;margin-top:1.5rem">Select Payment Method</h4>
     <div class="pay-methods">
       <div class="pay-method selected" id="pm-card" onclick="selectPayMethod('card')">
         <div class="pm-icon">💳</div>
@@ -1531,8 +1558,10 @@ async function bkGoStep3() {
         <div class="form-group"><label>Expiry</label><input type="text" id="card-exp" class="form-control" placeholder="MM/YY" maxlength="5"/></div>
         <div class="form-group"><label>CVV</label><input type="text" id="card-cvv" class="form-control" placeholder="123" maxlength="4"/></div>
       </div>
-    </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="confirmBooking(${total},'${courtId}','${date}','${lighting}')">Confirm &amp; Pay $${total} BMD</button>`;
+    </div>` : ''}
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:1rem" onclick="confirmBooking(${total},'${courtId}','${date}','${lighting}')">
+      ${total === 0 ? 'Confirm Free Booking' : 'Confirm &amp; Pay $' + total + ' BMD'}
+    </button>`;
 }
 
 // Override bkGoStep to call bkGoStep3 for step 3
@@ -2179,7 +2208,7 @@ async function loadPricingAdmin() {
     <td><span class="tag" style="background:var(--amber-soft);color:var(--amber)">${p.category?.replace('_',' ')}</span></td>
     <td>${p.label}</td>
     <td>${p.sport_type ? `<span class="tag tag-${p.sport_type}">${p.sport_type}</span>` : '—'}</td>
-    <td><strong>$${p.price_bmd}</strong></td>
+    <td><strong>$${(p.price_per_hour || p.price_flat || 0)}</strong></td>
     <td>${p.period||'—'}</td>
     <td>${p.is_active ? '<span class="status-badge status-active">Yes</span>' : '<span class="status-badge status-inactive">No</span>'}</td>
     <td>
@@ -2200,7 +2229,9 @@ function openAddPricingModal() {
     </div>
     <div class="form-group"><label>Notes</label><textarea id="pr-notes" class="form-control" rows="2"></textarea></div>
   `, async () => {
-    const { error } = await sb.from('pricing').insert({ category: document.getElementById('pr-cat').value, label: document.getElementById('pr-label').value, sport_type: document.getElementById('pr-sport').value || null, price_bmd: parseFloat(document.getElementById('pr-price').value), period: document.getElementById('pr-period').value, is_active: document.getElementById('pr-active').value === 'true', notes: document.getElementById('pr-notes').value });
+    const priceVal = parseFloat(document.getElementById('pr-price').value) || 0;
+    const prPeriod = document.getElementById('pr-period').value;
+    const { error } = await sb.from('pricing').insert({ category: document.getElementById('pr-cat').value, label: document.getElementById('pr-label').value, sport_type: document.getElementById('pr-sport').value || null, price_per_hour: prPeriod === 'hour' ? priceVal : null, price_flat: prPeriod !== 'hour' ? priceVal : null, period: prPeriod, is_active: document.getElementById('pr-active').value === 'true', description: document.getElementById('pr-notes').value });
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
     closeModal(); showToast('Pricing added.', 'success'); loadPricingAdmin();
   });
@@ -2213,13 +2244,15 @@ async function editPricing(id) {
       <div class="form-group"><label>Category</label><select id="pr-cat" class="form-control"><option value="court_hire" ${p.category==='court_hire'?'selected':''}>Court Hire</option><option value="membership" ${p.category==='membership'?'selected':''}>Membership</option><option value="equipment" ${p.category==='equipment'?'selected':''}>Equipment</option></select></div>
       <div class="form-group"><label>Label</label><input type="text" id="pr-label" class="form-control" value="${p.label||''}"/></div>
       <div class="form-group"><label>Sport</label><select id="pr-sport" class="form-control"><option value="" ${!p.sport_type?'selected':''}>Both</option><option value="tennis" ${p.sport_type==='tennis'?'selected':''}>Tennis</option><option value="pickleball" ${p.sport_type==='pickleball'?'selected':''}>Pickleball</option></select></div>
-      <div class="form-group"><label>Price (BMD $)</label><input type="number" id="pr-price" class="form-control" value="${p.price_bmd||0}"/></div>
+      <div class="form-group"><label>Price (BMD $)</label><input type="number" id="pr-price" class="form-control" value="${(p.price_per_hour || p.price_flat || 0)||0}"/></div>
       <div class="form-group"><label>Period</label><input type="text" id="pr-period" class="form-control" value="${p.period||''}"/></div>
       <div class="form-group"><label>Active</label><select id="pr-active" class="form-control"><option value="true" ${p.is_active?'selected':''}>Yes</option><option value="false" ${!p.is_active?'selected':''}>No</option></select></div>
     </div>
     <div class="form-group"><label>Notes</label><textarea id="pr-notes" class="form-control" rows="2">${p.notes||''}</textarea></div>
   `, async () => {
-    const { error } = await sb.from('pricing').update({ category: document.getElementById('pr-cat').value, label: document.getElementById('pr-label').value, sport_type: document.getElementById('pr-sport').value || null, price_bmd: parseFloat(document.getElementById('pr-price').value), period: document.getElementById('pr-period').value, is_active: document.getElementById('pr-active').value === 'true', notes: document.getElementById('pr-notes').value }).eq('id', id);
+    const priceValU = parseFloat(document.getElementById('pr-price').value) || 0;
+    const prPeriodU = document.getElementById('pr-period').value;
+    const { error } = await sb.from('pricing').update({ category: document.getElementById('pr-cat').value, label: document.getElementById('pr-label').value, sport_type: document.getElementById('pr-sport').value || null, price_per_hour: prPeriodU === 'hour' ? priceValU : null, price_flat: prPeriodU !== 'hour' ? priceValU : null, period: prPeriodU, is_active: document.getElementById('pr-active').value === 'true', description: document.getElementById('pr-notes').value }).eq('id', id);
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
     closeModal(); showToast('Pricing updated.', 'success'); loadPricingAdmin();
   });
