@@ -1414,13 +1414,13 @@ function selectSport(sport) {
 }
 
 async function loadBookingCourts() {
-  const { data } = await sb.from('courts').select('id,name,sport_type').eq('status', 'active').eq('sport_type', _selectedSport).order('name');
+  const { data } = await sb.from('courts').select('id,name,sport_type').eq('is_active', true).eq('sport_type', _selectedSport).order('name');
   const sel = document.getElementById('bk-court');
   sel.innerHTML = data && data.length ? data.map(c => `<option value="${c.id}">${c.name}</option>`).join('') : '<option value="">No courts available</option>';
 }
 
 async function loadCalendarCourts() {
-  const { data } = await sb.from('courts').select('id,name,sport_type').eq('status', 'active').order('name');
+  const { data } = await sb.from('courts').select('id,name,sport_type').eq('is_active', true).order('name');
   const sel = document.getElementById('cal-court-filter');
   sel.innerHTML = '<option value="">All Courts</option>' + (data || []).map(c => `<option value="${c.id}">${c.name} (${c.sport_type})</option>`).join('');
   renderPublicCalendar();
@@ -1446,7 +1446,7 @@ async function bkLoadSlots() {
   if (!courtId) { showToast('Please select a court.', 'error'); return; }
   const d = new Date(date);
   const dayOfWeek = d.getDay();
-  const { data: slots } = await sb.from('court_time_slots').select('*').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('status', 'active').order('start_time');
+  const { data: slots } = await sb.from('court_time_slots').select('*').eq('court_id', courtId).eq('day_of_week', dayOfWeek).eq('is_active', true).order('start_time');
   const { data: booked } = await sb.from('bookings').select('start_time,end_time').eq('court_id', courtId).eq('booking_date', date).neq('status', 'cancelled');
   const bookedTimes = new Set((booked || []).map(b => b.start_time));
   // Load conflict rules and find times blocked by linked courts
@@ -1641,7 +1641,7 @@ async function renderPublicCalendar() {
   const weekStart = getWeekStart(_calWeekOffset);
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 6);
   const dateStr = d => d.toISOString().split('T')[0];
-  const { data: slots } = await sb.from('court_time_slots').select('*,courts(name,sport_type)').eq('status', 'active').then(r => r);
+  const { data: slots } = await sb.from('court_time_slots').select('*,courts(name,sport_type)').eq('is_active', true);
   const { data: bookings } = await sb.from('bookings').select('court_id,booking_date,start_time,end_time,sport_type').gte('booking_date', dateStr(weekStart)).lte('booking_date', dateStr(weekEnd)).neq('status', 'cancelled');
   const bookedSet = new Set((bookings || []).map(b => `${b.court_id}_${b.booking_date}_${b.start_time}`));
   const hours = Array.from({length:14}, (_,i) => `${String(8+i).padStart(2,'0')}:00`);
@@ -1691,7 +1691,7 @@ async function loadDashboard() {
     sb.from('user_profiles').select('*', { count: 'exact', head: true }),
     sb.from('bookings').select('*', { count: 'exact', head: true }),
     sb.from('bookings').select('amount_paid').eq('payment_status', 'paid'),
-    sb.from('courts').select('*', { count: 'exact', head: true }).eq('status', 'active')
+    sb.from('courts').select('*', { count: 'exact', head: true }).eq('is_active', true)
   ]);
   const totalRev = (revData || []).reduce((s, r) => s + (r.amount_paid || 0), 0);
   document.getElementById('dc-users').textContent = uCount || 0;
@@ -1942,7 +1942,7 @@ function openAddSlotModal() {
   `, async () => {
     const courtId = document.getElementById('sl-court').value;
     if (!courtId) { showToast('Please select a court.', 'error'); return; }
-    const { error } = await sb.from('court_time_slots').insert({ court_id: courtId, day_of_week: parseInt(document.getElementById('sl-day').value), start_time: document.getElementById('sl-start').value + ':00', end_time: document.getElementById('sl-end').value + ':00', max_players: parseInt(document.getElementById('sl-max').value), status: document.getElementById('sl-status').value });
+    const { error } = await sb.from('court_time_slots').insert({ court_id: courtId, day_of_week: parseInt(document.getElementById('sl-day').value), start_time: document.getElementById('sl-start').value + ':00', end_time: document.getElementById('sl-end').value + ':00', duration_minutes: 60, max_players: parseInt(document.getElementById('sl-max').value), is_active: document.getElementById('sl-status').value === 'active' });
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
     closeModal(); showToast('Slot added.', 'success'); loadTimeSlots();
   });
@@ -1964,7 +1964,7 @@ async function editSlot(id) {
       <div class="form-group"><label>Max Players</label><input type="number" id="sl-max" class="form-control" value="${s.max_players||4}"/></div>
     </div>
   `, async () => {
-    const { error } = await sb.from('court_time_slots').update({ day_of_week: parseInt(document.getElementById('sl-day').value), start_time: document.getElementById('sl-start').value + ':00', end_time: document.getElementById('sl-end').value + ':00', max_players: parseInt(document.getElementById('sl-max').value), status: document.getElementById('sl-status').value }).eq('id', id);
+    const { error } = await sb.from('court_time_slots').update({ day_of_week: parseInt(document.getElementById('sl-day').value), start_time: document.getElementById('sl-start').value + ':00', end_time: document.getElementById('sl-end').value + ':00', duration_minutes: 60, max_players: parseInt(document.getElementById('sl-max').value), is_active: document.getElementById('sl-status').value === 'active' }).eq('id', id);
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
     closeModal(); showToast('Slot updated.', 'success'); loadTimeSlots();
   });
