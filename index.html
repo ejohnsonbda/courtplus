@@ -38,6 +38,14 @@ img{max-width:100%;display:block}
 .nav-links a.nav-admin:hover{background:var(--blue)}
 .nav-links a.nav-account{border:1.5px solid rgba(255,255,255,.4);border-radius:20px;color:var(--white)}
 
+/* ===== HAMBURGER ===== */
+.nav-hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:40px;height:40px;background:transparent;border:none;cursor:pointer;padding:4px;border-radius:8px;transition:background .2s}
+.nav-hamburger:hover{background:rgba(255,255,255,.12)}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--white);border-radius:2px;transition:all .3s}
+.nav-hamburger.is-open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-hamburger.is-open span:nth-child(2){opacity:0}
+.nav-hamburger.is-open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
 /* ===== BUTTONS ===== */
 .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;border-radius:50px;font-weight:700;font-size:0.95rem;border:none;transition:all .2s;cursor:pointer}
 .btn-primary{background:linear-gradient(135deg,var(--pink),var(--blue));color:var(--white)}
@@ -348,7 +356,11 @@ tbody tr:hover{background:#fafafa}
   .footer-grid{grid-template-columns:1fr 1fr}
 }
 @media(max-width:600px){
-  .nav-links a:not(.nav-admin):not(.nav-account){display:none}
+  .nav-hamburger{display:flex}
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--navy);flex-direction:column;align-items:stretch;padding:0.5rem 1rem 1rem;border-top:1px solid rgba(255,255,255,.1);gap:0.25rem;z-index:99}
+  .nav-links.mobile-open{display:flex}
+  .nav-links a{padding:0.75rem 1rem;border-radius:8px;font-size:0.95rem;width:100%}
+  .nav-links a.nav-account{border-color:rgba(255,255,255,.3);text-align:center;margin-top:0.5rem}
   .hero-title{font-size:2rem}
   .facilities-grid,.pricing-grid{grid-template-columns:1fr}
   .dash-cards,.rev-cards{grid-template-columns:1fr 1fr}
@@ -364,8 +376,9 @@ tbody tr:hover{background:#fafafa}
 <!-- NAV -->
 <nav id="main-nav">
   <div class="nav-inner">
-    <a href="#" class="nav-brand" onclick="routeToPublic(event,'hero')"><img src="bermuda-logo.png" alt="Bermuda Coat of Arms" class="nav-logo"/>Court<span>Plus</span></a>
-    <div class="nav-links">
+    <a href="#" class="nav-brand" onclick="routeToPublic(event,'hero')"><img src="bermuda-logo.png" alt="Bermuda Coat of Arms" class="nav-logo"/></a>
+    <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+    <div class="nav-links" id="nav-links-menu">
       <a href="#" onclick="routeToPublic(event,'about')">The Stadium</a>
       <a href="#" onclick="routeToPublic(event,'our-story')">Our Story</a>
       <a href="#" onclick="routeToPublic(event,'facilities')">Facilities</a>
@@ -1020,6 +1033,23 @@ let _adminCalWeekOffset = 0;
 let _allFAQs = [];
 let _allPricing = [];
 let _modalSaveCallback = null;
+
+// ===== MOBILE MENU =====
+function toggleMobileMenu() {
+  const menu = document.getElementById('nav-links-menu');
+  const btn = document.getElementById('nav-hamburger');
+  const isOpen = menu.classList.toggle('mobile-open');
+  btn.classList.toggle('is-open', isOpen);
+}
+// Close mobile menu when any nav link is clicked
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('nav-links-menu');
+  const btn = document.getElementById('nav-hamburger');
+  if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('mobile-open');
+    btn.classList.remove('is-open');
+  }
+});
 
 // ===== ROUTING =====
 async function checkRoute() {
