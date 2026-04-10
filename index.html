@@ -1268,7 +1268,7 @@ function renderUserBookings(bookings, isPast) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem">
         <div>
           <div style="font-weight:700;color:var(--navy)">${b.courts?.name || 'Court'} <span class="tag tag-${b.sport_type}">${b.sport_type}</span></div>
-          <div style="font-size:0.88rem;color:var(--muted);margin-top:0.25rem">${formatDate(b.booking_date)} &nbsp;•&nbsp; ${b.start_time?.substring(0,5)} – ${b.end_time?.substring(0,5)}</div>
+          <div style="font-size:0.88rem;color:var(--muted);margin-top:0.25rem">${formatDate(b.booking_date)} &nbsp;•&nbsp; ${fmt12h(b.start_time)} – ${fmt12h(b.end_time)}</div>
         </div>
         <div style="text-align:right">
           <span class="status-badge status-${b.status}">${b.status}</span>
@@ -1370,10 +1370,10 @@ async function loadOpeningHours() {
       {day_of_week:6,open_time:'08:00',close_time:'17:00',is_closed:false},
       {day_of_week:0,open_time:'08:00',close_time:'17:00',is_closed:false},
     ];
-    tbody.innerHTML = defaults.map(h => `<tr class="${h.day_of_week===today?'today':''}"><td><strong>${DAYS[h.day_of_week]}</strong></td><td>${h.open_time?.substring(0,5)||'—'}</td><td>${h.close_time?.substring(0,5)||'—'}</td><td><span class="hours-badge ${h.is_closed?'closed':'open'}">${h.is_closed?'Closed':'Open'}</span></td></tr>`).join('');
+    tbody.innerHTML = defaults.map(h => `<tr class="${h.day_of_week===today?'today':''}"><td><strong>${DAYS[h.day_of_week]}</strong></td><td>${fmt12h(h.open_time)||'—'}</td><td>${fmt12h(h.close_time)||'—'}</td><td><span class="hours-badge ${h.is_closed?'closed':'open'}">${h.is_closed?'Closed':'Open'}</span></td></tr>`).join('');
     return;
   }
-  tbody.innerHTML = data.map(h => `<tr class="${h.day_of_week===today?'today':''}"><td><strong>${DAYS[h.day_of_week]}</strong></td><td>${h.open_time?.substring(0,5)||'—'}</td><td>${h.close_time?.substring(0,5)||'—'}</td><td><span class="hours-badge ${h.is_closed?'closed':'open'}">${h.is_closed?'Closed':'Open'}</span></td></tr>`).join('');
+  tbody.innerHTML = data.map(h => `<tr class="${h.day_of_week===today?'today':''}"><td><strong>${DAYS[h.day_of_week]}</strong></td><td>${fmt12h(h.open_time)||'—'}</td><td>${fmt12h(h.close_time)||'—'}</td><td><span class="hours-badge ${h.is_closed?'closed':'open'}">${h.is_closed?'Closed':'Open'}</span></td></tr>`).join('');
 }
 
 async function loadPublicPricing() {
@@ -1510,7 +1510,7 @@ async function bkLoadSlots() {
     const label = isBooked ? 'Booked' : isConflict ? 'Unavailable' : isPast ? 'Past' : 'Available';
     const ttip = isConflict ? 'title="Unavailable — a linked court is booked at this time"' : '';
     return `<button class="slot-btn ${cls}" onclick="selectSlot(this,'${slot.id}','${slot.start_time}','${slot.end_time}')" ${isBooked || isConflict || isPast ? 'disabled' : ''} ${ttip}>
-      ${slot.start_time?.substring(0,5)} – ${slot.end_time?.substring(0,5)}
+      ${fmt12h(slot.start_time)} – ${fmt12h(slot.end_time)}
       <span class="slot-status">${label}</span>
     </button>`;
   }).join('');
@@ -1585,7 +1585,7 @@ async function bkGoStep3() {
 
   // Build slot rows for summary
   const slotRows = _selectedSlots.map((s, i) => `
-    <div class="pay-summary-row"><span>Slot ${i + 1}</span><span>${s.startTime?.substring(0,5)} – ${s.endTime?.substring(0,5)}</span></div>`).join('');
+    <div class="pay-summary-row"><span>Slot ${i + 1}</span><span>${fmt12h(s.startTime)} – ${fmt12h(s.endTime)}</span></div>`).join('');
 
   document.getElementById('bk-summary').innerHTML = `
     <h3 style="font-family:'Montserrat',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:1.5rem">Booking Summary</h3>
@@ -1657,10 +1657,10 @@ async function confirmBooking(total, courtId, date, lighting) {
   const conflictIds = (conflictRules || []).map(r => r.conflicts_with_court_id);
   for (const slot of _selectedSlots) {
     const { data: conflict } = await sb.from('bookings').select('id').eq('court_id', courtId).eq('booking_date', date).eq('start_time', slot.startTime).neq('status', 'cancelled');
-    if (conflict && conflict.length) { showToast(`Slot ${slot.startTime?.substring(0,5)} was just booked. Please go back and choose another.`, 'error'); bkGoStep(2); return; }
+    if (conflict && conflict.length) { showToast(`Slot ${fmt12h(slot.startTime)} was just booked. Please go back and choose another.`, 'error'); bkGoStep(2); return; }
     if (conflictIds.length) {
       const { data: linkedConflicts } = await sb.from('bookings').select('id').in('court_id', conflictIds).eq('booking_date', date).eq('start_time', slot.startTime).neq('status', 'cancelled');
-      if (linkedConflicts && linkedConflicts.length) { showToast(`Slot ${slot.startTime?.substring(0,5)} is blocked by a linked court booking.`, 'error'); bkGoStep(2); return; }
+      if (linkedConflicts && linkedConflicts.length) { showToast(`Slot ${fmt12h(slot.startTime)} is blocked by a linked court booking.`, 'error'); bkGoStep(2); return; }
     }
   }
   const { data: court } = await sb.from('courts').select('sport_type').eq('id', courtId).single();
@@ -1693,8 +1693,8 @@ async function confirmBooking(total, courtId, date, lighting) {
   document.querySelectorAll('.bk-step').forEach(s => s.classList.add('done'));
   document.getElementById('bk-panel-confirm').classList.add('active');
   const slotCount = _selectedSlots.length;
-  const firstSlot = _selectedSlots[0]?.startTime?.substring(0,5);
-  const lastSlot = _selectedSlots[_selectedSlots.length - 1]?.endTime?.substring(0,5);
+  const firstSlot = fmt12h(_selectedSlots[0]?.startTime);
+  const lastSlot = fmt12h(_selectedSlots[_selectedSlots.length - 1]?.endTime);
   document.getElementById('bk-confirm-msg').textContent = slotCount === 1
     ? `Your booking is confirmed for ${formatDate(date)} at ${firstSlot}. ${payMethod === 'desk' ? 'Please pay $' + total + ' BMD on arrival.' : 'Payment processed.'}`
     : `${slotCount} slots confirmed for ${formatDate(date)} from ${firstSlot} to ${lastSlot}. ${payMethod === 'desk' ? 'Please pay $' + total + ' BMD on arrival.' : 'Payment processed.'}`;
@@ -1778,7 +1778,7 @@ async function loadDashboard() {
   document.getElementById('dash-recent-bookings').innerHTML = (recent || []).length ? recent.map(b => `<div style="padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;display:flex;justify-content:space-between"><span><strong>${b.user_profiles?.full_name||b.user_id?.substring(0,8)}</strong> — ${b.courts?.name}</span><span class="status-badge status-${b.status}">${b.status}</span></div>`).join('') : '<div style="color:var(--muted);font-size:0.9rem">No bookings yet.</div>';
   const today = new Date().toISOString().split('T')[0];
   const { data: todayBk } = await sb.from('bookings').select('*,courts(name)').eq('booking_date', today).neq('status', 'cancelled').order('start_time');
-  document.getElementById('dash-today').innerHTML = (todayBk || []).length ? todayBk.map(b => `<div style="padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;display:flex;justify-content:space-between"><span>${b.start_time?.substring(0,5)} — ${b.courts?.name}</span><span class="tag tag-${b.sport_type}">${b.sport_type}</span></div>`).join('') : '<div style="color:var(--muted);font-size:0.9rem">No bookings today.</div>';
+  document.getElementById('dash-today').innerHTML = (todayBk || []).length ? todayBk.map(b => `<div style="padding:0.6rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;display:flex;justify-content:space-between"><span>${fmt12h(b.start_time)} — ${b.courts?.name}</span><span class="tag tag-${b.sport_type}">${b.sport_type}</span></div>`).join('') : '<div style="color:var(--muted);font-size:0.9rem">No bookings today.</div>';
 }
 
 // ===== ADMIN USERS =====
@@ -1979,7 +1979,7 @@ async function loadTimeSlots() {
   document.getElementById('timeslots-tbody').innerHTML = (data||[]).length ? data.map(s => `<tr>
     <td><strong>${s.courts?.name||'—'}</strong></td>
     <td>${DAYS_NAMES[s.day_of_week]||s.day_of_week}</td>
-    <td>${s.start_time?.substring(0,5)} – ${s.end_time?.substring(0,5)}</td>
+    <td>${fmt12h(s.start_time)} – ${fmt12h(s.end_time)}</td>
     <td><span class="tag tag-${s.courts?.sport_type}">${s.courts?.sport_type||'—'}</span></td>
     <td>${s.max_players||'—'}</td>
     <td><span class="status-badge status-${s.status}">${s.status}</span></td>
@@ -2061,7 +2061,7 @@ async function loadBookings() {
     <td><span class="tag tag-${b.sport_type}">${b.sport_type}</span></td>
     <td>${b.courts?.name||'—'}</td>
     <td>${b.user_profiles?.full_name||b.user_id?.substring(0,8)||'—'}</td>
-    <td>${b.start_time?.substring(0,5)} – ${b.end_time?.substring(0,5)}</td>
+    <td>${fmt12h(b.start_time)} – ${fmt12h(b.end_time)}</td>
     <td>$${b.amount_due||0}</td>
     <td><span class="status-badge status-${b.status}">${b.status}</span></td>
     <td><span class="status-badge status-${b.payment_status}">${b.payment_status}</span></td>
@@ -2340,8 +2340,8 @@ async function loadOpenHoursAdmin() {
   const { data } = await sb.from('opening_hours').select('*').order('day_of_week');
   document.getElementById('openhours-tbody').innerHTML = (data||[]).length ? data.map(h => `<tr>
     <td><strong>${DAYS[h.day_of_week]}</strong></td>
-    <td>${h.open_time?.substring(0,5)||'—'}</td>
-    <td>${h.close_time?.substring(0,5)||'—'}</td>
+    <td>${fmt12h(h.open_time)||'—'}</td>
+    <td>${fmt12h(h.close_time)||'—'}</td>
     <td>${h.is_closed ? '<span class="status-badge status-inactive">Yes</span>' : '<span class="status-badge status-active">No</span>'}</td>
     <td>${h.notes||'—'}</td>
     <td><button class="action-btn action-edit" onclick="editOpenHours('${h.id}')">Edit</button></td>
@@ -2379,6 +2379,17 @@ function formatDate(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr + 'T12:00:00');
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Convert HH:MM or HH:MM:SS string to 12-hour AM/PM format
+function fmt12h(timeStr) {
+  if (!timeStr) return '—';
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
 }
 
 // ===== INIT =====
