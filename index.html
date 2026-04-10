@@ -26,16 +26,17 @@ button{cursor:pointer;font-family:'Inter',sans-serif}
 img{max-width:100%;display:block}
 
 /* ===== NAV ===== */
-#main-nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem}
+#main-nav{position:sticky;top:0;z-index:100;background:var(--navy);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.1);padding:0 2rem}
 .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
-.nav-brand{font-family:'Montserrat',sans-serif;font-size:1.3rem;font-weight:800;color:var(--navy)}
+.nav-brand{font-family:'Montserrat',sans-serif;font-size:1.3rem;font-weight:800;color:var(--white);display:flex;align-items:center;gap:0.6rem}
 .nav-brand span{color:var(--pink)}
+.nav-logo{height:40px;width:auto;display:block;flex-shrink:0}
 .nav-links{display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap}
-.nav-links a{padding:0.45rem 0.85rem;border-radius:8px;font-size:0.88rem;font-weight:600;color:var(--muted);transition:all .2s}
-.nav-links a:hover{color:var(--blue);background:var(--blue-soft)}
+.nav-links a{padding:0.45rem 0.85rem;border-radius:8px;font-size:0.88rem;font-weight:600;color:rgba(255,255,255,.8);transition:all .2s}
+.nav-links a:hover{color:var(--white);background:rgba(255,255,255,.12)}
 .nav-links a.nav-admin{background:var(--navy);color:var(--white);border-radius:20px;padding:0.45rem 1.1rem}
 .nav-links a.nav-admin:hover{background:var(--blue)}
-.nav-links a.nav-account{border:1.5px solid var(--border);border-radius:20px}
+.nav-links a.nav-account{border:1.5px solid rgba(255,255,255,.4);border-radius:20px;color:var(--white)}
 
 /* ===== BUTTONS ===== */
 .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;border-radius:50px;font-weight:700;font-size:0.95rem;border:none;transition:all .2s;cursor:pointer}
@@ -363,7 +364,7 @@ tbody tr:hover{background:#fafafa}
 <!-- NAV -->
 <nav id="main-nav">
   <div class="nav-inner">
-    <a href="#" class="nav-brand" onclick="routeToPublic(event,'hero')">Court<span>Plus</span></a>
+    <a href="#" class="nav-brand" onclick="routeToPublic(event,'hero')"><img src="bermuda-logo.png" alt="Bermuda Coat of Arms" class="nav-logo"/>Court<span>Plus</span></a>
     <div class="nav-links">
       <a href="#" onclick="routeToPublic(event,'about')">The Stadium</a>
       <a href="#" onclick="routeToPublic(event,'our-story')">Our Story</a>
