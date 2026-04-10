@@ -1027,7 +1027,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let _currentUser = null;
 let _adminUser = null;
 let _selectedSport = 'tennis';
-let _selectedSlot = null;
+let _selectedSlot = null; // legacy single-slot reference (kept for compatibility)
+let _selectedSlots = []; // multi-slot array
 let _calWeekOffset = 0;
 let _adminCalWeekOffset = 0;
 let _allFAQs = [];
@@ -1498,7 +1499,9 @@ async function bkLoadSlots() {
     bkGoStep(2); return;
   }
   _selectedSlot = null;
+  _selectedSlots = [];
   document.getElementById('bk-confirm-btn').style.display = 'none';
+  document.getElementById('bk-confirm-btn').textContent = 'Confirm Selection →';
   grid.innerHTML = slots.map(slot => {
     const isBooked = bookedTimes.has(slot.start_time);
     const isConflict = conflictBlockedTimes.has(slot.start_time);
@@ -1511,19 +1514,42 @@ async function bkLoadSlots() {
       <span class="slot-status">${label}</span>
     </button>`;
   }).join('');
+  // Add multi-select hint
+  const hint = document.createElement('p');
+  hint.style.cssText = 'grid-column:1/-1;font-size:0.82rem;color:var(--muted);margin-top:0.5rem;text-align:center';
+  hint.textContent = 'Tap multiple slots to book them together.';
+  grid.appendChild(hint);
   bkGoStep(2);
 }
 
 function selectSlot(btn, slotId, startTime, endTime) {
-  document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  _selectedSlot = { slotId, startTime, endTime };
-  document.getElementById('bk-confirm-btn').style.display = 'inline-flex';
+  const idx = _selectedSlots.findIndex(s => s.slotId === slotId);
+  if (idx >= 0) {
+    // Deselect
+    _selectedSlots.splice(idx, 1);
+    btn.classList.remove('selected');
+  } else {
+    // Select
+    _selectedSlots.push({ slotId, startTime, endTime });
+    btn.classList.add('selected');
+  }
+  // Keep legacy _selectedSlot pointing to the first selected slot
+  _selectedSlot = _selectedSlots.length ? _selectedSlots[0] : null;
+  const confirmBtn = document.getElementById('bk-confirm-btn');
+  if (_selectedSlots.length > 0) {
+    confirmBtn.style.display = 'inline-flex';
+    confirmBtn.textContent = _selectedSlots.length === 1
+      ? 'Confirm Selection →'
+      : `Confirm ${_selectedSlots.length} Slots →`;
+  } else {
+    confirmBtn.style.display = 'none';
+  }
 }
 
 async function bkGoStep3() {
-  if (!_selectedSlot) { showToast('Please select a time slot.', 'error'); return; }
-  // Show loading state in panel 3 before fetching data
+  if (!_selectedSlots.length) { showToast('Please select at least one time slot.', 'error'); return; }
+  // Sort slots by start time
+  _selectedSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
   document.getElementById('bk-summary').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted)">Loading summary…</div>';
   _origBkGoStep(3);
   const date = document.getElementById('bk-date').value;
@@ -1531,15 +1557,15 @@ async function bkGoStep3() {
   const lighting = document.querySelector('input[name="lighting"]:checked').value;
   const { data: court } = await sb.from('courts').select('name,sport_type,is_free').eq('id', courtId).single();
 
-  // Calculate duration in hours from slot start/end time
-  const [sh, sm] = (_selectedSlot.startTime || '08:00:00').split(':').map(Number);
-  const [eh, em] = (_selectedSlot.endTime || '09:00:00').split(':').map(Number);
-  const durationHours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+  // Calculate total duration across all selected slots
+  let totalDurationHours = 0;
+  for (const slot of _selectedSlots) {
+    const [sh, sm] = (slot.startTime || '08:00:00').split(':').map(Number);
+    const [eh, em] = (slot.endTime || '09:00:00').split(':').map(Number);
+    totalDurationHours += ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+  }
 
-  // Determine hourly rate from membership type
-  // Rates: Adult $12/hr, Senior $10/hr, Junior $8/hr, Recreational $12/hr, Competitive/Tournament $8/hr
-  // Practice walls are free
-  let hourlyRate = 12; // default adult rate
+  let hourlyRate = 12;
   let rateLabel = 'Court Hire (Adult)';
   if (court?.is_free) {
     hourlyRate = 0;
@@ -1553,9 +1579,13 @@ async function bkGoStep3() {
     else { hourlyRate = 12; rateLabel = 'Court Hire (Adult)'; }
   }
 
-  const courtFee = parseFloat((hourlyRate * durationHours).toFixed(2));
-  const lightingFee = lighting === 'yes' ? parseFloat((10 * durationHours).toFixed(2)) : 0;
+  const courtFee = parseFloat((hourlyRate * totalDurationHours).toFixed(2));
+  const lightingFee = lighting === 'yes' ? parseFloat((10 * totalDurationHours).toFixed(2)) : 0;
   const total = parseFloat((courtFee + lightingFee).toFixed(2));
+
+  // Build slot rows for summary
+  const slotRows = _selectedSlots.map((s, i) => `
+    <div class="pay-summary-row"><span>Slot ${i + 1}</span><span>${s.startTime?.substring(0,5)} – ${s.endTime?.substring(0,5)}</span></div>`).join('');
 
   document.getElementById('bk-summary').innerHTML = `
     <h3 style="font-family:'Montserrat',sans-serif;font-size:1.2rem;color:var(--navy);margin-bottom:1.5rem">Booking Summary</h3>
@@ -1563,9 +1593,8 @@ async function bkGoStep3() {
       <div class="pay-summary-row"><span>Sport</span><span><span class="tag tag-${court?.sport_type}">${court?.sport_type}</span></span></div>
       <div class="pay-summary-row"><span>Court</span><span>${court?.name}</span></div>
       <div class="pay-summary-row"><span>Date</span><span>${formatDate(date)}</span></div>
-      <div class="pay-summary-row"><span>Start Time</span><span>${_selectedSlot.startTime?.substring(0,5)}</span></div>
-      <div class="pay-summary-row"><span>End Time</span><span>${_selectedSlot.endTime?.substring(0,5)}</span></div>
-      <div class="pay-summary-row"><span>Duration</span><span>${durationHours} hour${durationHours !== 1 ? 's' : ''}</span></div>
+      ${slotRows}
+      <div class="pay-summary-row"><span>Total Duration</span><span>${totalDurationHours} hour${totalDurationHours !== 1 ? 's' : ''}</span></div>
       <div class="pay-summary-row"><span>${rateLabel}</span><span>${courtFee === 0 ? 'FREE' : '$' + courtFee + ' BMD'}</span></div>
       ${lightingFee ? `<div class="pay-summary-row"><span>Floodlighting ($10/hr)</span><span>$${lightingFee} BMD</span></div>` : ''}
       <div class="pay-summary-row" style="font-weight:700;font-size:1.05rem;color:var(--navy);border-top:2px solid var(--border);padding-top:0.75rem;margin-top:0.5rem"><span>Total Due</span><span>${total === 0 ? 'FREE' : '$' + total + ' BMD'}</span></div>
@@ -1623,45 +1652,59 @@ async function confirmBooking(total, courtId, date, lighting) {
     return;
   }
   const payMethod = document.getElementById('pm-card').classList.contains('selected') ? 'card' : 'desk';
-  const { data: existing } = await sb.from('bookings').select('id').eq('user_profile_id', _currentUser.id).eq('status', 'confirmed').gte('booking_date', new Date().toISOString().split('T')[0]);
-  if (existing && existing.length >= 2) { showToast('You already have 2 active bookings. Please cancel one first.', 'error'); return; }
-  const { data: conflict } = await sb.from('bookings').select('id').eq('court_id', courtId).eq('booking_date', date).eq('start_time', _selectedSlot.startTime).neq('status', 'cancelled');
-  if (conflict && conflict.length) { showToast('This slot was just booked. Please choose another.', 'error'); bkGoStep(2); return; }
-  // Enforce linked court conflict rules
+  // Check for conflicts on all selected slots before inserting any
   const { data: conflictRules } = await sb.from('court_conflict_rules').select('conflicts_with_court_id').eq('court_id', courtId);
-  if (conflictRules && conflictRules.length) {
-    const conflictIds = conflictRules.map(r => r.conflicts_with_court_id);
-    const { data: linkedConflicts } = await sb.from('bookings').select('id, court_id').in('court_id', conflictIds).eq('booking_date', date).eq('start_time', _selectedSlot.startTime).neq('status', 'cancelled');
-    if (linkedConflicts && linkedConflicts.length) {
-      showToast('This time slot is unavailable due to a linked court booking. Please choose another time.', 'error');
-      bkGoStep(2); return;
+  const conflictIds = (conflictRules || []).map(r => r.conflicts_with_court_id);
+  for (const slot of _selectedSlots) {
+    const { data: conflict } = await sb.from('bookings').select('id').eq('court_id', courtId).eq('booking_date', date).eq('start_time', slot.startTime).neq('status', 'cancelled');
+    if (conflict && conflict.length) { showToast(`Slot ${slot.startTime?.substring(0,5)} was just booked. Please go back and choose another.`, 'error'); bkGoStep(2); return; }
+    if (conflictIds.length) {
+      const { data: linkedConflicts } = await sb.from('bookings').select('id').in('court_id', conflictIds).eq('booking_date', date).eq('start_time', slot.startTime).neq('status', 'cancelled');
+      if (linkedConflicts && linkedConflicts.length) { showToast(`Slot ${slot.startTime?.substring(0,5)} is blocked by a linked court booking.`, 'error'); bkGoStep(2); return; }
     }
   }
   const { data: court } = await sb.from('courts').select('sport_type').eq('id', courtId).single();
-  const { error } = await sb.from('bookings').insert({
-    user_profile_id: _currentUser.id,
-    court_id: courtId,
-    sport_type: court?.sport_type || _selectedSport,
-    booking_date: date,
-    start_time: _selectedSlot.startTime,
-    end_time: _selectedSlot.endTime,
-    duration_hours: 1,
-    amount_due: total,
-    amount_paid: payMethod === 'card' ? total : 0,
-    payment_status: payMethod === 'card' ? 'paid' : 'unpaid',
-    status: 'confirmed'
+  // Calculate per-slot amount
+  const perSlotAmount = _selectedSlots.length > 0 ? parseFloat((total / _selectedSlots.length).toFixed(2)) : total;
+  // Insert one booking row per slot
+  const bookingRows = _selectedSlots.map((slot, i) => {
+    const [sh, sm] = (slot.startTime || '08:00:00').split(':').map(Number);
+    const [eh, em] = (slot.endTime || '09:00:00').split(':').map(Number);
+    const dur = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    // Last slot gets any rounding remainder
+    const slotAmt = i === _selectedSlots.length - 1 ? parseFloat((total - perSlotAmount * (_selectedSlots.length - 1)).toFixed(2)) : perSlotAmount;
+    return {
+      user_profile_id: _currentUser.id,
+      court_id: courtId,
+      sport_type: court?.sport_type || _selectedSport,
+      booking_date: date,
+      start_time: slot.startTime,
+      end_time: slot.endTime,
+      duration_hours: dur,
+      amount_due: slotAmt,
+      amount_paid: payMethod === 'card' ? slotAmt : 0,
+      payment_status: payMethod === 'card' ? 'paid' : 'unpaid',
+      status: 'confirmed'
+    };
   });
+  const { error } = await sb.from('bookings').insert(bookingRows);
   if (error) { showToast('Booking failed: ' + error.message, 'error'); return; }
   document.querySelectorAll('.bk-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.bk-step').forEach(s => s.classList.add('done'));
   document.getElementById('bk-panel-confirm').classList.add('active');
-  document.getElementById('bk-confirm-msg').textContent = `Your booking is confirmed for ${formatDate(date)} at ${_selectedSlot.startTime?.substring(0,5)}. ${payMethod === 'desk' ? 'Please pay $' + total + ' BMD on arrival.' : 'Payment processed.'}`;
+  const slotCount = _selectedSlots.length;
+  const firstSlot = _selectedSlots[0]?.startTime?.substring(0,5);
+  const lastSlot = _selectedSlots[_selectedSlots.length - 1]?.endTime?.substring(0,5);
+  document.getElementById('bk-confirm-msg').textContent = slotCount === 1
+    ? `Your booking is confirmed for ${formatDate(date)} at ${firstSlot}. ${payMethod === 'desk' ? 'Please pay $' + total + ' BMD on arrival.' : 'Payment processed.'}`
+    : `${slotCount} slots confirmed for ${formatDate(date)} from ${firstSlot} to ${lastSlot}. ${payMethod === 'desk' ? 'Please pay $' + total + ' BMD on arrival.' : 'Payment processed.'}`;
   showToast('Booking confirmed!', 'success');
   renderPublicCalendar();
 }
 
 function bkReset() {
   _selectedSlot = null;
+  _selectedSlots = [];
   document.getElementById('bk-date').value = '';
   bkGoStep(1);
   loadBookingCourts();
