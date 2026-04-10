@@ -783,6 +783,7 @@ tbody tr:hover{background:#fafafa}
       <a href="javascript:void(0)" onclick="showPanel('faqs',this)"><span class="nav-icon">❓</span>FAQs</a>
       <a href="javascript:void(0)" onclick="showPanel('pricing',this)"><span class="nav-icon">💲</span>Pricing</a>
       <a href="javascript:void(0)" onclick="showPanel('openhours',this)"><span class="nav-icon">🕗</span>Opening Hours</a>
+      <a href="javascript:void(0)" onclick="showPanel('reports',this)"><span class="nav-icon">📊</span>Reports</a>
     </nav>
     <div class="sidebar-footer">
       <button onclick="adminSignOut()">Sign Out</button>
@@ -989,6 +990,55 @@ tbody tr:hover{background:#fafafa}
       </div>
     </div>
 
+    <!-- REPORTS -->
+    <div id="panel-reports" class="admin-panel">
+      <div class="admin-header">
+        <div><h1>Reports</h1><p>Generate and export reports on users, bookings, revenue, and court popularity.</p></div>
+      </div>
+
+      <!-- Report Type Tabs -->
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem">
+        <button class="btn btn-navy btn-sm" id="rpt-tab-bookings" onclick="showReport('bookings')">Booking Report</button>
+        <button class="btn btn-outline btn-sm" id="rpt-tab-revenue" onclick="showReport('revenue')">Revenue Report</button>
+        <button class="btn btn-outline btn-sm" id="rpt-tab-users" onclick="showReport('users')">User Report</button>
+        <button class="btn btn-outline btn-sm" id="rpt-tab-courts" onclick="showReport('courts')">Court Popularity</button>
+      </div>
+
+      <!-- Filters -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem">
+        <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;align-items:flex-end">
+          <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="rpt-from" class="form-control"/></div>
+          <div class="form-group" style="margin:0"><label>To Date</label><input type="date" id="rpt-to" class="form-control"/></div>
+          <div class="form-group" style="margin:0"><label>Sport</label>
+            <select id="rpt-sport" class="form-control">
+              <option value="">All Sports</option>
+              <option value="tennis">Tennis</option>
+              <option value="pickleball">Pickleball</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0"><label>Status</label>
+            <select id="rpt-status" class="form-control">
+              <option value="">All Statuses</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:0.5rem;padding-top:1.5rem">
+            <button class="btn btn-primary btn-sm" onclick="runReport()">Run Report</button>
+            <button class="btn btn-outline btn-sm" onclick="exportReportCSV()">Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Cards -->
+      <div id="rpt-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem"></div>
+
+      <!-- Results Table -->
+      <div class="table-wrap">
+        <table><thead id="rpt-thead"></thead><tbody id="rpt-tbody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">Select a report type and click Run Report.</td></tr></tbody></table>
+      </div>
+    </div>
+
   </main>
 </div><!-- end #admin-app-view -->
 
@@ -1147,7 +1197,8 @@ function showPanel(name, linkEl) {
     updates: loadUpdates,
     faqs: loadFAQsAdmin,
     pricing: loadPricingAdmin,
-    openhours: loadOpenHoursAdmin
+    openhours: loadOpenHoursAdmin,
+    reports: loadReports
   };
   if (loaders[name]) loaders[name]();
 }
@@ -2390,6 +2441,206 @@ function fmt12h(timeStr) {
   const ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   return `${h}:${m} ${ampm}`;
+}
+
+// ===== REPORTS =====
+let _rptType = 'bookings';
+let _rptData = [];
+
+function loadReports() {
+  // Set default date range: first of current month to today
+  const now = new Date();
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const today = now.toISOString().split('T')[0];
+  const fromEl = document.getElementById('rpt-from');
+  const toEl = document.getElementById('rpt-to');
+  if (fromEl && !fromEl.value) fromEl.value = firstOfMonth;
+  if (toEl && !toEl.value) toEl.value = today;
+  showReport('bookings');
+}
+
+function showReport(type) {
+  _rptType = type;
+  ['bookings','revenue','users','courts'].forEach(t => {
+    const btn = document.getElementById('rpt-tab-' + t);
+    if (btn) { btn.className = t === type ? 'btn btn-navy btn-sm' : 'btn btn-outline btn-sm'; }
+  });
+  // Hide sport/status filters for user and court reports
+  const sportEl = document.getElementById('rpt-sport');
+  const statusEl = document.getElementById('rpt-status');
+  if (sportEl) sportEl.closest('.form-group').style.display = (type === 'users') ? 'none' : '';
+  if (statusEl) statusEl.closest('.form-group').style.display = (type === 'users' || type === 'courts') ? 'none' : '';
+}
+
+async function runReport() {
+  const from = document.getElementById('rpt-from').value;
+  const to = document.getElementById('rpt-to').value;
+  const sport = document.getElementById('rpt-sport').value;
+  const status = document.getElementById('rpt-status').value;
+  const tbody = document.getElementById('rpt-tbody');
+  const thead = document.getElementById('rpt-thead');
+  const summary = document.getElementById('rpt-summary');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">Loading…</td></tr>';
+  summary.innerHTML = '';
+
+  if (_rptType === 'bookings') {
+    let q = sb.from('bookings').select('*,user_profiles(full_name,email),courts(name,sport_type)').order('booking_date', { ascending: false });
+    if (from) q = q.gte('booking_date', from);
+    if (to) q = q.lte('booking_date', to);
+    if (sport) q = q.eq('sport_type', sport);
+    if (status) q = q.eq('status', status);
+    const { data } = await q;
+    _rptData = data || [];
+    const total = _rptData.length;
+    const confirmed = _rptData.filter(b => b.status === 'confirmed').length;
+    const cancelled = _rptData.filter(b => b.status === 'cancelled').length;
+    const revenue = _rptData.filter(b => b.payment_status === 'paid').reduce((s, b) => s + (b.amount_paid || 0), 0);
+    summary.innerHTML = rptCard('Total Bookings', total) + rptCard('Confirmed', confirmed, 'green') + rptCard('Cancelled', cancelled, 'red') + rptCard('Revenue Collected', '$' + revenue.toFixed(2) + ' BMD', 'blue');
+    thead.innerHTML = '<tr><th>Date</th><th>User</th><th>Court</th><th>Sport</th><th>Time</th><th>Duration</th><th>Amount</th><th>Payment</th><th>Status</th></tr>';
+    tbody.innerHTML = _rptData.length ? _rptData.map(b => `<tr>
+      <td>${formatDate(b.booking_date)}</td>
+      <td>${b.user_profiles?.full_name || '—'}<br/><span style="font-size:0.78rem;color:var(--muted)">${b.user_profiles?.email || ''}</span></td>
+      <td>${b.courts?.name || '—'}</td>
+      <td><span class="tag tag-${b.sport_type}">${b.sport_type}</span></td>
+      <td>${fmt12h(b.start_time)} – ${fmt12h(b.end_time)}</td>
+      <td>${b.duration_hours || 1}h</td>
+      <td>$${b.amount_due || 0}</td>
+      <td><span class="status-badge status-${b.payment_status}">${b.payment_status}</span></td>
+      <td><span class="status-badge status-${b.status}">${b.status}</span></td>
+    </tr>`).join('') : '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">No bookings found for this period.</td></tr>';
+
+  } else if (_rptType === 'revenue') {
+    let q = sb.from('bookings').select('*,user_profiles(full_name),courts(name,sport_type)').order('booking_date', { ascending: false });
+    if (from) q = q.gte('booking_date', from);
+    if (to) q = q.lte('booking_date', to);
+    if (sport) q = q.eq('sport_type', sport);
+    const { data } = await q;
+    _rptData = data || [];
+    const paid = _rptData.filter(b => b.payment_status === 'paid');
+    const unpaid = _rptData.filter(b => b.payment_status === 'unpaid');
+    const totalCollected = paid.reduce((s, b) => s + (b.amount_paid || 0), 0);
+    const totalOutstanding = unpaid.reduce((s, b) => s + ((b.amount_due || 0) - (b.amount_paid || 0)), 0);
+    const tennis = paid.filter(b => b.sport_type === 'tennis').reduce((s, b) => s + (b.amount_paid || 0), 0);
+    const pickle = paid.filter(b => b.sport_type === 'pickleball').reduce((s, b) => s + (b.amount_paid || 0), 0);
+    summary.innerHTML = rptCard('Total Collected', '$' + totalCollected.toFixed(2), 'green') + rptCard('Outstanding', '$' + totalOutstanding.toFixed(2), 'red') + rptCard('Tennis Revenue', '$' + tennis.toFixed(2)) + rptCard('Pickleball Revenue', '$' + pickle.toFixed(2));
+    thead.innerHTML = '<tr><th>Date</th><th>User</th><th>Court</th><th>Sport</th><th>Amount Due</th><th>Amount Paid</th><th>Balance</th><th>Payment Status</th></tr>';
+    tbody.innerHTML = _rptData.length ? _rptData.map(b => {
+      const balance = (b.amount_due || 0) - (b.amount_paid || 0);
+      return `<tr>
+        <td>${formatDate(b.booking_date)}</td>
+        <td>${b.user_profiles?.full_name || '—'}</td>
+        <td>${b.courts?.name || '—'}</td>
+        <td><span class="tag tag-${b.sport_type}">${b.sport_type}</span></td>
+        <td>$${b.amount_due || 0}</td>
+        <td>$${b.amount_paid || 0}</td>
+        <td style="color:${balance > 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">$${balance.toFixed(2)}</td>
+        <td><span class="status-badge status-${b.payment_status}">${b.payment_status}</span></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No data found for this period.</td></tr>';
+
+  } else if (_rptType === 'users') {
+    const { data: users } = await sb.from('user_profiles').select('*').order('created_at', { ascending: false });
+    const { data: bookings } = await sb.from('bookings').select('user_profile_id,amount_paid,payment_status,status');
+    _rptData = users || [];
+    const active = _rptData.filter(u => u.is_active !== false).length;
+    const memberships = {};
+    _rptData.forEach(u => { memberships[u.membership_type || 'recreational'] = (memberships[u.membership_type || 'recreational'] || 0) + 1; });
+    const topMembership = Object.entries(memberships).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+    summary.innerHTML = rptCard('Total Users', _rptData.length) + rptCard('Active Users', active, 'green') + rptCard('Top Membership', topMembership);
+    thead.innerHTML = '<tr><th>Name</th><th>Email</th><th>Phone</th><th>Membership</th><th>Total Bookings</th><th>Total Spent</th><th>Joined</th></tr>';
+    tbody.innerHTML = _rptData.length ? _rptData.map(u => {
+      const userBk = (bookings || []).filter(b => b.user_profile_id === u.id);
+      const spent = userBk.filter(b => b.payment_status === 'paid').reduce((s, b) => s + (b.amount_paid || 0), 0);
+      return `<tr>
+        <td><strong>${u.full_name || '—'}</strong></td>
+        <td>${u.email || '—'}</td>
+        <td>${u.phone || '—'}</td>
+        <td><span class="tag">${u.membership_type || 'recreational'}</span></td>
+        <td>${userBk.length}</td>
+        <td>$${spent.toFixed(2)} BMD</td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—'}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted)">No users found.</td></tr>';
+
+  } else if (_rptType === 'courts') {
+    let q = sb.from('bookings').select('court_id,sport_type,status,amount_paid,payment_status,courts(name,sport_type)');
+    if (from) q = q.gte('booking_date', from);
+    if (to) q = q.lte('booking_date', to);
+    if (sport) q = q.eq('sport_type', sport);
+    const { data } = await q;
+    _rptData = data || [];
+    const confirmed = _rptData.filter(b => b.status !== 'cancelled');
+    // Group by court
+    const courtMap = {};
+    confirmed.forEach(b => {
+      const key = b.court_id;
+      if (!courtMap[key]) courtMap[key] = { name: b.courts?.name || 'Unknown', sport: b.courts?.sport_type || '—', count: 0, revenue: 0 };
+      courtMap[key].count++;
+      if (b.payment_status === 'paid') courtMap[key].revenue += (b.amount_paid || 0);
+    });
+    const rows = Object.values(courtMap).sort((a, b) => b.count - a.count);
+    const topCourt = rows[0]?.name || '—';
+    const totalBookings = confirmed.length;
+    const totalRevenue = confirmed.filter(b => b.payment_status === 'paid').reduce((s, b) => s + (b.amount_paid || 0), 0);
+    summary.innerHTML = rptCard('Courts Active', rows.length) + rptCard('Total Bookings', totalBookings) + rptCard('Most Popular', topCourt, 'blue') + rptCard('Total Revenue', '$' + totalRevenue.toFixed(2), 'green');
+    thead.innerHTML = '<tr><th>Court</th><th>Sport</th><th>Total Bookings</th><th>Utilisation</th><th>Revenue Collected</th></tr>';
+    const maxCount = rows[0]?.count || 1;
+    tbody.innerHTML = rows.length ? rows.map(r => `<tr>
+      <td><strong>${r.name}</strong></td>
+      <td><span class="tag tag-${r.sport}">${r.sport}</span></td>
+      <td>${r.count}</td>
+      <td>
+        <div style="background:var(--border);border-radius:50px;height:8px;width:100%;min-width:80px">
+          <div style="background:var(--blue);border-radius:50px;height:8px;width:${Math.round(r.count/maxCount*100)}%"></div>
+        </div>
+        <span style="font-size:0.78rem;color:var(--muted)">${Math.round(r.count/maxCount*100)}%</span>
+      </td>
+      <td>$${r.revenue.toFixed(2)} BMD</td>
+    </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">No data found for this period.</td></tr>';
+  }
+}
+
+function rptCard(label, value, color) {
+  const colors = { green: 'var(--green)', red: 'var(--red)', blue: 'var(--blue)' };
+  const c = colors[color] || 'var(--navy)';
+  return `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center">
+    <div style="font-size:1.4rem;font-weight:800;color:${c}">${value}</div>
+    <div style="font-size:0.78rem;color:var(--muted);margin-top:0.25rem">${label}</div>
+  </div>`;
+}
+
+function exportReportCSV() {
+  if (!_rptData.length) { showToast('Run a report first.', 'error'); return; }
+  let headers = [], rows = [];
+  if (_rptType === 'bookings') {
+    headers = ['Date','User','Email','Court','Sport','Start','End','Duration','Amount Due','Amount Paid','Payment Status','Booking Status'];
+    rows = _rptData.map(b => [b.booking_date, b.user_profiles?.full_name || '', b.user_profiles?.email || '', b.courts?.name || '', b.sport_type, b.start_time, b.end_time, b.duration_hours || 1, b.amount_due || 0, b.amount_paid || 0, b.payment_status, b.status]);
+  } else if (_rptType === 'revenue') {
+    headers = ['Date','User','Court','Sport','Amount Due','Amount Paid','Balance','Payment Status'];
+    rows = _rptData.map(b => [b.booking_date, b.user_profiles?.full_name || '', b.courts?.name || '', b.sport_type, b.amount_due || 0, b.amount_paid || 0, ((b.amount_due || 0) - (b.amount_paid || 0)).toFixed(2), b.payment_status]);
+  } else if (_rptType === 'users') {
+    headers = ['Name','Email','Phone','Membership','Joined'];
+    rows = _rptData.map(u => [u.full_name || '', u.email || '', u.phone || '', u.membership_type || 'recreational', u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '']);
+  } else if (_rptType === 'courts') {
+    headers = ['Court','Sport','Total Bookings','Revenue'];
+    const courtMap = {};
+    _rptData.filter(b => b.status !== 'cancelled').forEach(b => {
+      const key = b.court_id;
+      if (!courtMap[key]) courtMap[key] = { name: b.courts?.name || '', sport: b.courts?.sport_type || '', count: 0, revenue: 0 };
+      courtMap[key].count++;
+      if (b.payment_status === 'paid') courtMap[key].revenue += (b.amount_paid || 0);
+    });
+    rows = Object.values(courtMap).sort((a, b) => b.count - a.count).map(r => [r.name, r.sport, r.count, r.revenue.toFixed(2)]);
+  }
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `courtplus_${_rptType}_report_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Report exported as CSV.', 'success');
 }
 
 // ===== INIT =====
