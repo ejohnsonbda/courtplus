@@ -1729,7 +1729,7 @@ async function renderPublicCalendar() {
       ${days.map(d => `<th style="background:var(--navy);color:var(--white);padding:0.6rem 0.5rem;font-size:0.78rem;border:1px solid rgba(255,255,255,.1);text-align:center">${DAYS_SHORT[d.getDay()]}<br/><span style="font-size:0.72rem;opacity:.8">${d.getDate()}/${d.getMonth()+1}</span></th>`).join('')}
     </tr></thead><tbody>`;
   for (const hour of hours) {
-    html += `<tr><td style="background:var(--bg);color:var(--muted);font-weight:600;font-size:0.78rem;padding:0.4rem 0.5rem;border:1px solid var(--border);text-align:right;white-space:nowrap">${hour}</td>`;
+    html += `<tr><td style="background:var(--bg);color:var(--muted);font-weight:600;font-size:0.78rem;padding:0.4rem 0.5rem;border:1px solid var(--border);text-align:right;white-space:nowrap">${fmt12h(hour)}</td>`;
     for (const day of days) {
       const dayOfWeek = day.getDay();
       const dateKey = dateStr(day);
@@ -2138,7 +2138,7 @@ async function loadAdminCalendar() {
     ${days.map(d => `<th>${DAYS_SHORT[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</th>`).join('')}
   </tr></thead><tbody>`;
   for (const hour of hours) {
-    html += `<tr><td class="time-td">${hour}</td>`;
+    html += `<tr><td class="time-td">${fmt12h(hour)}</td>`;
     for (const day of days) {
       const dateKey = dateStr(day);
       const dayBookings = (bookings || []).filter(b => b.booking_date === dateKey && b.start_time?.startsWith(hour.substring(0,2)));
