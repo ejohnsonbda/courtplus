@@ -1617,7 +1617,7 @@ async function confirmBooking(total, courtId, date, lighting) {
     duration_hours: 1,
     amount_due: total,
     amount_paid: payMethod === 'card' ? total : 0,
-    payment_status: payMethod === 'card' ? 'paid' : 'pending',
+    payment_status: payMethod === 'card' ? 'paid' : 'unpaid',
     status: 'confirmed'
   });
   if (error) { showToast('Booking failed: ' + error.message, 'error'); return; }
@@ -2007,7 +2007,7 @@ function openAddBookingModal() {
       <div class="form-group"><label>Sport</label><select id="ab-sport" class="form-control"><option value="tennis">Tennis</option><option value="pickleball">Pickleball</option></select></div>
       <div class="form-group"><label>Amount Due ($)</label><input type="number" id="ab-amount" class="form-control" value="10"/></div>
       <div class="form-group"><label>Status</label><select id="ab-status" class="form-control"><option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option></select></div>
-      <div class="form-group"><label>Payment</label><select id="ab-pay" class="form-control"><option value="pending">Pending</option><option value="paid">Paid</option><option value="partial">Partial</option></select></div>
+      <div class="form-group"><label>Payment</label><select id="ab-pay" class="form-control"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="partial">Partial</option></select></div>
     </div>
   `, async () => {
     const courtId = document.getElementById('ab-court').value;
@@ -2028,7 +2028,7 @@ async function editBooking(id) {
   openModal('Edit Booking', `
     <div class="form-grid">
       <div class="form-group"><label>Status</label><select id="eb-status" class="form-control"><option value="confirmed" ${b.status==='confirmed'?'selected':''}>Confirmed</option><option value="pending" ${b.status==='pending'?'selected':''}>Pending</option><option value="cancelled" ${b.status==='cancelled'?'selected':''}>Cancelled</option></select></div>
-      <div class="form-group"><label>Payment Status</label><select id="eb-pay" class="form-control"><option value="pending" ${b.payment_status==='pending'?'selected':''}>Pending</option><option value="paid" ${b.payment_status==='paid'?'selected':''}>Paid</option><option value="partial" ${b.payment_status==='partial'?'selected':''}>Partial</option></select></div>
+      <div class="form-group"><label>Payment Status</label><select id="eb-pay" class="form-control"><option value="unpaid" ${b.payment_status==='unpaid'||b.payment_status==='pending'?'selected':''}>Unpaid</option><option value="paid" ${b.payment_status==='paid'?'selected':''}>Paid</option><option value="partial" ${b.payment_status==='partial'?'selected':''}>Partial</option></select></div>
       <div class="form-group"><label>Amount Due ($)</label><input type="number" id="eb-due" class="form-control" value="${b.amount_due||0}"/></div>
       <div class="form-group"><label>Amount Paid ($)</label><input type="number" id="eb-paid" class="form-control" value="${b.amount_paid||0}"/></div>
     </div>
@@ -2091,7 +2091,7 @@ async function loadRevenue() {
   const paid = all.filter(b => b.payment_status === 'paid');
   const tennis = paid.filter(b => b.sport_type === 'tennis');
   const pickleball = paid.filter(b => b.sport_type === 'pickleball');
-  const outstanding = all.filter(b => b.payment_status === 'pending');
+  const outstanding = all.filter(b => b.payment_status === 'unpaid' || b.payment_status === 'pending');
   const now = new Date();
   const thisMonth = paid.filter(b => { const d = new Date(b.booking_date); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
   const sum = arr => arr.reduce((s, b) => s + (b.amount_paid || 0), 0);
